@@ -1,45 +1,77 @@
+// src/pages/AssetCreate.jsx
 import React, { useState } from "react";
 import API from "../api/api";
 import { useNavigate } from "react-router-dom";
+import AutocompleteInput from "../components/AutocompleteInput";
 
 export default function AssetCreate() {
   const [form, setForm] = useState({
     asset_name: "",
-    category_id: "",
-    subcategory_id: "",
+    category_name: "",
+    subcategory_name: "",
     serial_number: "",
     model_number: "",
     purchase_date: "",
     purchase_cost: "",
-    vendor_id: "",
+    vendor_name: "",
     warranty_expiry: "",
     status: "active",
-    current_location_id: "",
-    assigned_to: "",
+    location_name: "",
+    assigned_username: "", // full name of user
     description: ""
   });
+
+
+  // fetch helpers
+  const fetchCategories = async (q) => {
+    const res = await API.get("/meta/categories");
+    return res.data.map((c) => c.category_name).filter((n) => n.toLowerCase().includes(q.toLowerCase()));
+  };
+
+  const fetchSubcategories = async (q, category) => {
+    if (!category) return [];
+    const res = await API.get("/meta/subcategories", { params: { category_name: category } });
+    return res.data.map((s) => s.subcategory_name).filter((n) => n.toLowerCase().includes(q.toLowerCase()));
+  };
+
+  const fetchVendors = async (q) => {
+    const res = await API.get("/meta/vendors");
+    return res.data.map((v) => v.vendor_name).filter((n) => n.toLowerCase().includes(q.toLowerCase()));
+  };
+
+  const fetchLocations = async (q) => {
+    const res = await API.get("/meta/locations");
+    return res.data.map((l) => l.location_name).filter((n) => n.toLowerCase().includes(q.toLowerCase()));
+  };
+
+  const fetchUsers = async (q) => {
+    const res = await API.get("/meta/users");
+    return res.data.map((u) => u.full_name).filter((n) => n.toLowerCase().includes(q.toLowerCase()));
+  };
+
 
   const nav = useNavigate();
 
   const handleChange = (key, value) => {
-    setForm({ ...form, [key]: value });
+    setForm(prev => ({ ...prev, [key]: value }));
   };
 
   const submit = async (e) => {
     e.preventDefault();
     try {
       const body = {
-        ...form,
-        category_id: form.category_id || null,
-        subcategory_id: form.subcategory_id || null,
+        asset_name: form.asset_name,
+        category_name: form.category_name || null,
+        subcategory_name: form.subcategory_name || null,
         serial_number: form.serial_number || null,
         model_number: form.model_number || null,
         purchase_date: form.purchase_date || null,
         purchase_cost: form.purchase_cost || null,
-        vendor_id: form.vendor_id || null,
+        vendor_name: form.vendor_name || null,
         warranty_expiry: form.warranty_expiry || null,
-        current_location_id: form.current_location_id || null,
-        assigned_to: form.assigned_to || null,
+        status: form.status || "active",
+        location_name: form.location_name || null,
+        assigned_username: form.assigned_username || null,
         description: form.description || null
       };
 
@@ -47,7 +79,8 @@ export default function AssetCreate() {
       nav(`/assets/${res.data.asset_id}`);
     } catch (err) {
       console.error(err);
-      alert("Create failed");
+      const msg = err?.response?.data?.message || "Create failed";
+      alert(msg);
     }
   };
 
@@ -57,7 +90,6 @@ export default function AssetCreate() {
 
       <form onSubmit={submit} className="grid grid-cols-2 gap-4">
 
-        {/* Asset Name */}
         <input
           className="border p-2 rounded col-span-2"
           placeholder="Asset Name"
@@ -66,23 +98,40 @@ export default function AssetCreate() {
           required
         />
 
-        {/* Category */}
-        <input
+        {/* <input
           className="border p-2 rounded"
-          placeholder="Category ID"
-          value={form.category_id}
-          onChange={(e) => handleChange("category_id", e.target.value)}
+          placeholder="Category (e.g. Laptops)"
+          value={form.category_name}
+          onChange={(e) => handleChange("category_name", e.target.value)}
+        /> */}
+
+        <AutocompleteInput
+          value={form.category_name}
+          onChange={(v) => handleChange("category_name", v)}
+          fetcher={fetchCategories}
+          placeholder="Category (e.g., Laptops)"
         />
 
-        {/* Subcategory */}
-        <input
+
+
+
+        {/* <input
           className="border p-2 rounded"
-          placeholder="Subcategory ID"
-          value={form.subcategory_id}
-          onChange={(e) => handleChange("subcategory_id", e.target.value)}
+          placeholder="Subcategory (e.g. Ultrabooks)"
+          value={form.subcategory_name}
+          onChange={(e) => handleChange("subcategory_name", e.target.value)}
+        /> */}
+
+        <AutocompleteInput
+          value={form.subcategory_name}
+          onChange={(v) => handleChange("subcategory_name", v)}
+          fetcher={(q) => fetchSubcategories(q, form.category_name)}
+          placeholder="Subcategory"
         />
 
-        {/* Model */}
+
+
+
         <input
           className="border p-2 rounded"
           placeholder="Model Number"
@@ -90,7 +139,10 @@ export default function AssetCreate() {
           onChange={(e) => handleChange("model_number", e.target.value)}
         />
 
-        {/* Serial */}
+
+
+
+
         <input
           className="border p-2 rounded"
           placeholder="Serial Number"
@@ -98,7 +150,6 @@ export default function AssetCreate() {
           onChange={(e) => handleChange("serial_number", e.target.value)}
         />
 
-        {/* Purchase Date */}
         <input
           type="date"
           className="border p-2 rounded"
@@ -106,7 +157,6 @@ export default function AssetCreate() {
           onChange={(e) => handleChange("purchase_date", e.target.value)}
         />
 
-        {/* Purchase Cost */}
         <input
           type="number"
           className="border p-2 rounded"
@@ -115,15 +165,22 @@ export default function AssetCreate() {
           onChange={(e) => handleChange("purchase_cost", e.target.value)}
         />
 
-        {/* Vendor */}
-        <input
+        {/* <input
           className="border p-2 rounded"
-          placeholder="Vendor ID"
-          value={form.vendor_id}
-          onChange={(e) => handleChange("vendor_id", e.target.value)}
+          placeholder="Vendor (company name)"
+          value={form.vendor_name}
+          onChange={(e) => handleChange("vendor_name", e.target.value)}
+        /> */}
+
+        <AutocompleteInput
+          value={form.vendor_name}
+          onChange={(v) => handleChange("vendor_name", v)}
+          fetcher={fetchVendors}
+          placeholder="Vendor (e.g., Dell, Lenovo)"
         />
 
-        {/* Warranty */}
+
+
         <input
           type="date"
           className="border p-2 rounded"
@@ -131,23 +188,38 @@ export default function AssetCreate() {
           onChange={(e) => handleChange("warranty_expiry", e.target.value)}
         />
 
-        {/* Location */}
-        <input
+        {/* <input
           className="border p-2 rounded"
-          placeholder="Location ID"
-          value={form.current_location_id}
-          onChange={(e) => handleChange("current_location_id", e.target.value)}
+          placeholder="Location (e.g. Head Office)"
+          value={form.location_name}
+          onChange={(e) => handleChange("location_name", e.target.value)}
+        /> */}
+
+        <AutocompleteInput
+          value={form.location_name}
+          onChange={(v) => handleChange("location_name", v)}
+          fetcher={fetchLocations}
+          placeholder="Location (e.g., HQ, Store Room)"
         />
 
-        {/* Assigned To */}
-        <input
+
+
+
+        {/* <input
           className="border p-2 rounded"
-          placeholder="Assigned User ID"
-          value={form.assigned_to}
-          onChange={(e) => handleChange("assigned_to", e.target.value)}
+          placeholder="Assign to (full name of user)"
+          value={form.assigned_username}
+          onChange={(e) => handleChange("assigned_username", e.target.value)}
+        /> */}
+
+        <AutocompleteInput
+          value={form.assigned_username}
+          onChange={(v) => handleChange("assigned_username", v)}
+          fetcher={fetchUsers}
+          placeholder="Assign to user (full name)"
         />
 
-        {/* Status */}
+
         <select
           className="border p-2 rounded"
           value={form.status}
@@ -158,7 +230,6 @@ export default function AssetCreate() {
           <option value="retired">Retired</option>
         </select>
 
-        {/* Description */}
         <textarea
           className="border p-2 rounded col-span-2"
           placeholder="Description"
@@ -173,7 +244,3 @@ export default function AssetCreate() {
     </div>
   );
 }
-
-
-//create assets fails if not an admin or asset manager,
-//go to rbac, role based access .js

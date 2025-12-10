@@ -13,6 +13,11 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
+//can call to shwo suggestions
+const metaRoutes = require('./routes/meta');
+app.use('/api/meta', metaRoutes);
+
+
 // CORS: allow frontend origin with credentials
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN || "http://localhost:5173",
