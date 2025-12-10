@@ -1,0 +1,5 @@
+INSERT INTO roles (role_name, description)
+VALUES 
+  ('admin','System administrator'),
+  ('asset_manager','Manages assets'),
+  ('viewer','Can only view data');
