@@ -32,12 +32,28 @@ npm install -D @tailwindcss/postcss
 npm install -D tailwindcss @tailwindcss/postcss postcss autoprefixer
 
 
-
+//i was having problems with tailwind v4 and v3 in frontend so this
 
 npm install -D tailwindcss@3 postcss autoprefixer
 npx tailwindcss init -p
 
 npm uninstall tailwindcss postcss autoprefixer @tailwindcss/postcss
 
+rm -rf node_modules package-lock.json
+//do here
+npm install
+npm install -D tailwindcss@3 postcss autoprefixer
+npx tailwindcss init -p
 
+
+//backend
+npm install cookie-parser
+
+cd backend
+rm -rf node_modules
+rm package-lock.json
+
+del package-lock.json
+npm install
+npm install cookie-parser
 
