@@ -13,7 +13,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white shadow">
-      <div className="container flex items-center gap-4 py-3">
+      <div className="container mx-auto px-4 flex items-center gap-4 py-3">
         <Link to="/" className="font-semibold">Asset Portal</Link>
         <Link to="/assets" className="text-sm text-gray-600">Assets</Link>
         <div className="ml-auto">
@@ -23,3 +23,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+//without mx-auto it was going far left, so added it

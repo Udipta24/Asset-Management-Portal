@@ -10,19 +10,31 @@ import MainLayout from "./layout/MainLayout";
 import Signup from "./pages/Signup"
 
 export default function App() {
+  
   return (
-    <Routes>
-      {/* Public Route (NO Navbar) */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+    //<div className="min-h-screen bg-gray-100">
+      //<div className="container mx-auto px-4 py-6">
 
-      {/* Protected Routes (WITH Navbar) */}
-      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/assets" element={<Assets />} />
-        <Route path="/assets/create" element={<AssetCreate />} />
-        <Route path="/assets/:id" element={<AssetDetail />} />
-      </Route>
-    </Routes>
+        
+          <Routes>
+            {/* Public Route (NO Navbar) */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+
+            {/* Protected Routes (WITH Navbar) */}
+            <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/assets" element={<Assets />} />
+              <Route path="/assets/create" element={<AssetCreate />} />
+              <Route path="/assets/:id" element={<AssetDetail />} />
+            </Route>
+          </Routes>
+        
+
+    //  </div>
+   // </div>
   );
 }
+
+  
+

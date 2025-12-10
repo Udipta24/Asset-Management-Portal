@@ -49,7 +49,7 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 text-center  text-red-500">
           Don’t have an account?{" "}
           <Link to="/signup" className="text-blue-600">
             Sign up
