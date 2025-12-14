@@ -1,138 +1,153 @@
-// src/controllers/authController.js
-const db = require("../config/db");
+// external modules
 const bcrypt = require("bcrypt");
-const { sign } = require("../utils/jwt");
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
+// internal modules
+const { createUser, getUserByEmail } = require("../models/userModel");
 
-// helper to find roles (simple approach: pick first role)
-const getUserRoles = async (user_id) => {
-  const r = await db.query(
-    `SELECT r.role_name FROM roles r JOIN user_roles ur ON r.role_id = ur.role_id WHERE ur.user_id=$1`,
-    [user_id]
-  );
-  return r.rows.map(row => row.role_name);
-};
+dotenv.config();
 
+// register a new user
 exports.register = async (req, res, next) => {
   try {
-    const { full_name, email, password, phone, designation, department, role_id } = req.body;
-
-    if (!full_name || !email || !password) {
-      return res.status(400).json({ message: "Full name, email, and password are required" });
+    const { full_name, email, password, phone, designation, department } = req.body;
+    // check if all fields are provided
+    if (
+      !full_name ||
+      !email ||
+      !password ||
+      !phone ||
+      !designation ||
+      !department
+    ) {
+      return res.status(400).json({ message: "All fields are required" });
     }
-
-    // Check email, as username and password can be same
-    const existing = await db.query(
-      "SELECT 1 FROM users WHERE email = $1",
-      [email.toLowerCase()]
+    // check if user already exists
+    const user = await getUserByEmail(email);
+    if (user) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+    // hash password
+    const passwordHash = await bcrypt.hash(
+      password,
+      process.env.BCRYPT_SALT_ROUNDS
     );
-    if (existing.rows.length) {
-      return res.status(409).json({ message: "Email already registered" });
-    }
-
-    // Hash password
-    const password_hash = await bcrypt.hash(password, 10);
-
-    // Insert user
-    const insertUser = await db.query(
-      `INSERT INTO users (full_name, email, password_hash, phone, designation, department)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       RETURNING user_id, full_name, email`,
-      [
-        full_name,
-        email,
-        password_hash,
-        phone || null,
-        designation || null,
-        department || null
-      ]
+    // create the new user
+    const newUser = await createUser(
+      full_name,
+      email,
+      passwordHash,
+      phone,
+      designation,
+      department,
+      role
     );
-
-    const userId = insertUser.rows[0].user_id;
-
-    // Assign role if provided
-    if (role_id) {
-      await db.query(
-        "INSERT INTO user_roles (user_id, role_id) VALUES ($1,$2)",
-        [userId, role_id]
-      );
-    }
-
+    // return the new user
     res.status(201).json({
       message: "User created successfully",
-      user: insertUser.rows[0]
+      user: newUser,
     });
-
   } catch (err) {
     next(err);
   }
 };
-
-
+// login a user
 exports.login = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
-
-    if (!username || !password)
-      return res.status(400).json({ message: "Missing fields" });
-
-    // lookup by full_name
-    const q = await db.query(
-      "SELECT * FROM users WHERE full_name = $1",
-      [username]
-    );
-
-    if (q.rows.length === 0)
+    const { email, password } = req.body;
+    // check if all fields are provided
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
+    }
+    // check is token is already present
+    const cookieName = process.env.COOKIE_NAME;
+    const existingToken = req.cookies && req.cookies[cookieName];
+    // if token is present, check if it is valid
+    if (existingToken) {
+      try {
+        // decode the token
+        const decoded = jwt.verify(existingToken, process.env.JWT_SECRET);
+        // If token is valid and matches the email being logged in, user is already logged in
+        if (decoded.email === email) {
+          return res.status(200).json({
+            message: "Already logged in",
+            user: {
+              user_id: decoded.user_id,
+              email: decoded.email,
+              role: decoded.role,
+            },
+          });
+        }
+      } catch (err) {
+        // Token is invalid/expired, proceed with normal login
+      }
+    }
+    // check if user exists
+    const user = await getUserByEmail(email);
+    if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
-
-    const user = q.rows[0];
-
-    const ok = await bcrypt.compare(password, user.password_hash);
-    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
-
-    const roles = await getUserRoles(user.user_id);
-    const role = roles[0] || "viewer";
-
-    const payload = { user_id: user.user_id, full_name: user.full_name, role };
-    const token = sign(payload);
-
-    const cookieName = process.env.COOKIE_NAME || "asset_token";
+    }
+    // check if password is valid
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    // create a payload for the token
+    const payload = { user_id: user.user_id, email: user.email, role: user.role };
+    // sign the token
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+    // set the cookie
     const cookieSecure = process.env.COOKIE_SECURE === "true";
-
-    res.cookie(cookieName, token, {
+    res.cookie(process.env.COOKIE_NAME, token, {
       httpOnly: true,
       secure: cookieSecure,
       sameSite: cookieSecure ? "none" : "lax",
-      maxAge: 86400000, 
-      path: "/"
+      maxAge: 86400000,
     });
-
+    // return the user
     res.json({
+      message: "Login successful",
       user: {
-        user_id: user.user_id,
+        user_id: user.public_id,
         full_name: user.full_name,
-        role
-      }
+        email: user.email,
+        role: user.role,
+      },
     });
-
   } catch (err) {
     next(err);
   }
 };
-
-
+// logout a user
 exports.logout = (req, res) => {
-  const cookieName = process.env.COOKIE_NAME || "asset_token";
-  res.clearCookie(cookieName, { path: "/" });
-  res.json({ message: "Logged out" });
+  // clear the cookie
+  res.clearCookie(process.env.COOKIE_NAME, { path: "/" });
+  // return the message
+  res.json({ message: "Logout successful" });
 };
 
+// Verify current session - returns user info if logged in
 exports.me = async (req, res, next) => {
   try {
-    const userId = req.user.user_id;
-    const q = await db.query(`SELECT user_id, full_name, email, designation, department FROM users WHERE user_id=$1`, [userId]);
-    if (q.rows.length === 0) return res.status(404).json({ message: "User not found" });
-    const rolesQ = await db.query(`SELECT r.role_name FROM roles r JOIN user_roles ur ON r.role_id = ur.role_id WHERE ur.user_id=$1`, [userId]);
-    const roles = rolesQ.rows.map(r => r.role_name);
-    res.json({ user: q.rows[0], roles });
-  } catch (err) { next(err); }
+    // This endpoint requires authenticate middleware, so req.user is already set
+    // Fetch full user details from database to get full_name
+    const user = await getUserByEmail(req.user.email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({
+      user: {
+        user_id: user.public_id,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
