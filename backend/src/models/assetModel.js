@@ -220,27 +220,35 @@ exports.listAssets = async (filters = {}) => {
 };
 
 exports.getAssetById = async (public_id) => {
-  const query = `
-        SELECT 
-            a.*,
-            c.categoryname AS category_name,
-            sc.subcategoryname AS subcategory_name,
-            v.vendorname AS vendor_name,
-            l.long AS longitude,
-            l.lat AS latitude,
-        FROM assets a
-        LEFT JOIN asset_categories c ON a.category_id = c.id
-        LEFT JOIN sub_categories sc ON a.subcategory_id = sc.id
-        LEFT JOIN vendors v ON a.vendor_id = v.id
-        LEFT JOIN locations l ON a.location_id = l.id
-        WHERE a.public_id = $1
-    `;
-  const values = [public_id];
-  const res = await db.query(query, values);
-  if (res.rows.length === 0) {
-    return null;
+  if(!public_id){
+    throw new Error("Asset ID required");
   }
-  return res.rows[0];
+  try {
+    
+    const query = `
+          SELECT 
+              a.*,
+              c.categoryname AS category_name,
+              sc.subcategoryname AS subcategory_name,
+              v.vendorname AS vendor_name,
+              l.long AS longitude,
+              l.lat AS latitude,
+          FROM assets a
+          LEFT JOIN asset_categories c ON a.category_id = c.id
+          LEFT JOIN sub_categories sc ON a.subcategory_id = sc.id
+          LEFT JOIN vendors v ON a.vendor_id = v.id
+          LEFT JOIN locations l ON a.location_id = l.id
+          WHERE a.public_id = $1
+      `;
+    const values = [public_id];
+    const res = await db.query(query, values);
+    if (res.rows.length === 0) {
+      return null;
+    }
+    return res.rows[0];
+  } catch (error) {
+    throw error;
+  }
 };
 
 exports.updateAsset = async (public_id, updateFields = {}) => {
@@ -254,89 +262,93 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
   ) {
     throw new Error("Missing or invalid update fields");
   }
-
-  const setClauses = [];
-  const values = [];
-  let idx = 1;
-
-  // SET part of the query
-  const refFieldMap = {
-    category_name: {
-      table: "asset_categories",
-      id_field: "category_id",
-      name_field: "category_name",
-      asset_field: "category_id",
-    },
-    subcategory_name: {
-      table: "sub_categories",
-      id_field: "subcategory_id",
-      name_field: "subcategory_name",
-      asset_field: "subcategory_id",
-    },
-    vendor_name: {
-      table: "vendors",
-      id_field: "vendor_id",
-      name_field: "vendor_name",
-      asset_field: "vendor_id",
-    },
-  };
-
-  for (const [key, value] of Object.entries(updateFields)) {
-    if (key === "longitude" || key === "latitude") {
-      continue;
-    }
-    if (refFieldMap.hasOwnProperty(key)) {
-      const { table, id_field, name_field, asset_field } = refFieldMap[key];
-      let refId;
-      const refRes = await db.query(
-        `SELECT ${id_field} FROM ${table} WHERE ${name_field} = $1`,
-        [value]
-      );
-      if (refRes.rows.length > 0) {
-        refId = refRes.rows[0][id_field];
-        setClauses.push(`${asset_field} = $${idx++}`);
-        values.push(refId);
+  try {
+    
+    const setClauses = [];
+    const values = [];
+    let idx = 1;
+  
+    // SET part of the query
+    const refFieldMap = {
+      category_name: {
+        table: "asset_categories",
+        id_field: "category_id",
+        name_field: "category_name",
+        asset_field: "category_id",
+      },
+      subcategory_name: {
+        table: "sub_categories",
+        id_field: "subcategory_id",
+        name_field: "subcategory_name",
+        asset_field: "subcategory_id",
+      },
+      vendor_name: {
+        table: "vendors",
+        id_field: "vendor_id",
+        name_field: "vendor_name",
+        asset_field: "vendor_id",
+      },
+    };
+  
+    for (const [key, value] of Object.entries(updateFields)) {
+      if (key === "longitude" || key === "latitude") {
+        continue;
+      }
+      if (refFieldMap.hasOwnProperty(key)) {
+        const { table, id_field, name_field, asset_field } = refFieldMap[key];
+        let refId;
+        const refRes = await db.query(
+          `SELECT ${id_field} FROM ${table} WHERE ${name_field} = $1`,
+          [value]
+        );
+        if (refRes.rows.length > 0) {
+          refId = refRes.rows[0][id_field];
+          setClauses.push(`${asset_field} = $${idx++}`);
+          values.push(refId);
+        } else {
+          throw new Error(
+            `No such ${key.replace("_name", "")} exists. Please create it first.`
+          );
+        }
       } else {
-        throw new Error(
-          `No such ${key.replace("_name", "")} exists. Please create it first.`
+        setClauses.push(`${key} = $${idx++}`);
+        values.push(value);
+      }
+    }
+  
+    // handling for longitude and latitude update
+    if ("longitude" in updateFields && "latitude" in updateFields) {
+      // asset's current location_id
+      const locRes = await db.query(
+        `SELECT location_id FROM assets WHERE public_id = $1`,
+        [public_id]
+      );
+      if (locRes.rows.length > 0 && locRes.rows[0].location_id) {
+        const locationId = locRes.rows[0].location_id;
+        await db.query(
+          `UPDATE locations SET longitude = $1, latitude = $2 WHERE id = $3`,
+          [updateFields.longitude, updateFields.latitude, locationId]
         );
       }
-    } else {
-      setClauses.push(`${key} = $${idx++}`);
-      values.push(value);
     }
-  }
-
-  // handling for longitude and latitude update
-  if ("longitude" in updateFields && "latitude" in updateFields) {
-    // asset's current location_id
-    const locRes = await db.query(
-      `SELECT location_id FROM assets WHERE public_id = $1`,
-      [public_id]
-    );
-    if (locRes.rows.length > 0 && locRes.rows[0].location_id) {
-      const locationId = locRes.rows[0].location_id;
-      await db.query(
-        `UPDATE locations SET longitude = $1, latitude = $2 WHERE id = $3`,
-        [updateFields.longitude, updateFields.latitude, locationId]
-      );
+  
+    values.push(public_id); // For WHERE clause
+  
+    const query = `
+          UPDATE assets
+          SET ${setClauses.join(", ")}
+          WHERE public_id = $${idx}
+          RETURNING *;
+      `;
+  
+    const res = await db.query(query, values);
+    if (res.rows.length === 0) {
+      return null; // Nothing found to update
     }
+    return res.rows[0];
+  } catch (error) {
+    throw error;
   }
-
-  values.push(public_id); // For WHERE clause
-
-  const query = `
-        UPDATE assets
-        SET ${setClauses.join(", ")}
-        WHERE public_id = $${idx}
-        RETURNING *;
-    `;
-
-  const res = await db.query(query, values);
-  if (res.rows.length === 0) {
-    return null; // Nothing found to update
-  }
-  return res.rows[0];
 };
 
 exports.deleteAsset = async (public_id) => {
