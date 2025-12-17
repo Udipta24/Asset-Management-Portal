@@ -2,7 +2,12 @@ const categoryModel = require("../models/categoryModel");
 
 exports.create = async (req, res, next) => {
     try {
+        // Check if category already exists
         const {category_name, description} = req.body;
+        const existing = await categoryModel.findByName(category_name);
+        if (existing) {
+            return res.status(409).json({ error: "Category already exists" });
+        }
         if(!category_name){
             return res.status(400).json({ error: "Missing required category details" });
         }
@@ -36,6 +41,10 @@ exports.delete = async (req, res, next) => {
         const id = req.params.id;
         const cat = await categoryModel.deleteCategory(id);
         if (!cat) return res.status(404).json({ error: "Category not found" });
+        if (cat && cat.message) {
+            // Cannot delete due to assigned assets
+            return res.status(409).json({ error: cat.message });
+        }
         res.json(cat);
     } catch (error) {
         next(error);

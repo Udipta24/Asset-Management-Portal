@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-async function generateUniqueCatCode(categoryName, db) {
+async function generateUniqueCatCode(categoryName) {
   // Generate base code
   const words = categoryName.trim().toUpperCase().split(/\s+/);
 
@@ -41,9 +41,9 @@ async function generateUniqueCatCode(categoryName, db) {
 // Add a new category
 exports.addCategory = async (data) => {
   try {
-    const catCode = await generateUniqueCatCode(data.category_name, db);
+    const catCode = await generateUniqueCatCode(data.category_name);
     const result = await db.query(
-      "INSERT INTO categories (category_name, category_code, description) VALUES ($1, $2, $3) RETURNING category_name, category_code",
+      "INSERT INTO asset_categories (category_name, category_code, description) VALUES ($1, $2, $3) RETURNING category_name, category_code",
       [data.category_name, catCode, data.description || "No description"]
     );
     return result.rows[0];
@@ -56,7 +56,7 @@ exports.addCategory = async (data) => {
 exports.updateCategoryDescription = async (id, newDescription) => {
   try {
     const result = await db.query(
-      "UPDATE categories SET description = $1 WHERE id = $2 RETURNING category_name, category_code, description",
+      "UPDATE asset_categories SET description = $1 WHERE id = $2 RETURNING category_name, category_code, description",
       [newDescription, id]
     );
     if (result.rows.length === 0) {
@@ -76,7 +76,7 @@ exports.deleteCategory = async (id) => {
       "SELECT COUNT(*) AS cnt FROM assets WHERE category_id = $1",
       [id]
     );
-    if (result[0].cnt > 0) {
+    if (result.rows[0].cnt > 0) {
       // Cannot delete, assets exist
       return {
         message: "Can't delete the category as assets are assigned to it",
@@ -109,7 +109,7 @@ exports.listAllCategories = async () => {
 exports.getCategoryByName = async (category_name) => {
   try {
     const result = await db.query(
-      "SELECT * FROM asset_categories WHERE category_name = $1",
+      "SELECT * FROM asset_categories WHERE LOWER(category_name) = LOWER($1)",
       [category_name]
     );
     if (result.rows.length === 0) {
