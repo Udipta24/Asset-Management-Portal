@@ -9,6 +9,11 @@ const authRoutes = require("./routes/authRouter");
 const assetRoutes = require("./routes/assetsRouter");
 const userRoutes = require("./routes/usersRouter");
 const errorHandler = require("./middlewares/errorHandler");
+const categoryRoutes = require("./routes/categoryRouter");
+const subcategoryRoutes = require("./routes/subcategoryRouter");
+const departmentRoutes = require("./routes/departmentRouter");
+const designationRoutes = require("./routes/designationRouter");
+const vendorRoutes = require("./routes/vendorRouter");
 
 const app = express();
 const PORT = process.env.PORT;
@@ -25,6 +30,12 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/subcategories", subcategoryRoutes);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/designations", designationRoutes);
+app.use("/api/vendors", vendorRoutes);
+
 app.use(errorHandler);
 
 db.pool
