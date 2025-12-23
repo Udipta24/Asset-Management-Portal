@@ -3,24 +3,29 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 // internal modules
-const { createUser, getUserByEmail } = require("../models/userModel");
+const { createUser, getUserByEmail, updatePasswordByEmail } = require("../models/userModel");
 
 dotenv.config();
 
 // register a new user
 exports.register = async (req, res, next) => {
   try {
-    const { full_name, email, password, phone, designation, department } = req.body;
-    // check if all fields are provided
+    const { 
+      full_name, 
+      email, 
+      password, 
+      phone = "NO PHONE", 
+      designation = "NO DESIGNATION", 
+      department 
+    } = req.body;
+    // check if required fields are provided
     if (
       !full_name ||
       !email ||
       !password ||
-      !phone ||
-      !designation ||
       !department
     ) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ message: "full_name, email, password, and department are required" });
     }
     // check if user already exists
     const user = await getUserByEmail(email);
@@ -32,15 +37,14 @@ exports.register = async (req, res, next) => {
       password,
       process.env.BCRYPT_SALT_ROUNDS
     );
-    // create the new user
+    // create the new user - role is ALWAYS set to 'USER' server-side
     const newUser = await createUser(
       full_name,
       email,
       passwordHash,
       phone,
       designation,
-      department,
-      role
+      department
     );
     // return the new user
     res.status(201).json({
@@ -75,6 +79,7 @@ exports.login = async (req, res, next) => {
             message: "Already logged in",
             user: {
               user_id: decoded.user_id,
+              public_id: decoded.public_id,
               email: decoded.email,
               role: decoded.role,
             },
@@ -90,12 +95,18 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     // check if password is valid
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    // create a payload for the token
-    const payload = { user_id: user.user_id, email: user.email, role: user.role };
+    // create a payload for the token - include department_id for ASSET_MANAGER restrictions
+    const payload = { 
+      user_id: user.user_id, 
+      public_id: user.public_id, 
+      email: user.email, 
+      role: user.role_name, // Use role_name from database
+      department_id: user.department_id // Include for department-based access control
+    };
     // sign the token
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
@@ -113,9 +124,9 @@ exports.login = async (req, res, next) => {
       message: "Login successful",
       user: {
         user_id: user.public_id,
-        full_name: user.full_name,
+        full_name: user.name, // Use name field from database
         email: user.email,
-        role: user.role,
+        role: user.role_name, // Use role_name from database
       },
     });
   } catch (err) {
@@ -130,23 +141,89 @@ exports.logout = (req, res) => {
   res.json({ message: "Logout successful" });
 };
 
-// Verify current session - returns user info if logged in
-exports.me = async (req, res, next) => {
+// Forgot password - generates reset token and returns it directly
+exports.forgotPassword = async (req, res, next) => {
   try {
-    // This endpoint requires authenticate middleware, so req.user is already set
-    // Fetch full user details from database to get full_name
-    const user = await getUserByEmail(req.user.email);
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    // Check if user exists
+    const user = await getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Generate reset token (expires in 1 hour)
+    const resetToken = jwt.sign(
+      { email: user.email, type: "password_reset" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.json({
+      message: "Reset token generated successfully",
+      resetToken: resetToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Reset password - validates token and updates password
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { token, new_password } = req.body;
+
+    if (!token || !new_password) {
+      return res.status(400).json({
+        message: "Reset token and new password are required",
+      });
+    }
+
+    // Validate password strength (optional - add your requirements)
+    if (new_password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters long",
+      });
+    }
+
+    // Verify and decode the reset token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Check if token is for password reset
+      if (decoded.type !== "password_reset") {
+        return res.status(400).json({ message: "Invalid reset token" });
+      }
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+      return res.status(400).json({ message: "Invalid reset token" });
+    }
+
+    // Check if user still exists
+    const user = await getUserByEmail(decoded.email);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json({
-      user: {
-        user_id: user.public_id,
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-      },
-    });
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(
+      new_password,
+      parseInt(process.env.BCRYPT_SALT_ROUNDS)
+    );
+
+    // Update password
+    await updatePasswordByEmail(decoded.email, passwordHash);
+
+    res.json({ message: "Password has been reset successfully" });
   } catch (err) {
     next(err);
   }

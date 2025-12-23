@@ -34,6 +34,9 @@ exports.createAsset = async (data) => {
     const subcatRes = await getSubcatIdCode(data.subcategory, category_id);
     const { subcategory_id, subcategory_code } = subcatRes.rows[0];
 
+    //--- Get vendor (id) ---
+    const vendor_id = await db.query("SELECT vendor_id FROM vendors WHERE vendor_name = $1", [data.vendor]);
+
     // --- Insert asset, get id ---
     // Basic fields, if more may be present in database, adjust as needed.
     const insertRes = await client.query(
@@ -52,11 +55,11 @@ exports.createAsset = async (data) => {
         data.model_number,
         data.purchase_date,
         data.purchase_cost,
-        data.vendor,
+        vendor_id,
         data.status,
-        data.assigned_to || null,
+        data.assigned_to || "NOT ASSIGNED",
         data.warranty_expiry,
-        data.description || null,
+        data.description || "NO DESCRIPTION",
       ]
     );
     const asset_id = insertRes.rows[0].asset_id;
@@ -111,6 +114,7 @@ exports.listAssets = async (filters = {}) => {
     warranty_expiry_status, // can be 'expired', 'expiring_soon', 'valid'
     warranty_expiry_from, // custom date filters
     warranty_expiry_to,
+    department_id, // For ASSET_MANAGER: filter by department
   } = filters;
 
   let whereClauses = [];
@@ -193,6 +197,20 @@ exports.listAssets = async (filters = {}) => {
     whereClauses.push(`warranty_expiry <= $${idx++}`);
     values.push(warranty_expiry_to);
   }
+  
+  // Filter by department for ASSET_MANAGER
+  // Assets are linked to departments through assigned_to user's department
+  if (department_id) {
+    whereClauses.push(`
+      EXISTS (
+        SELECT 1 FROM users u 
+        WHERE u.user_id = assets.assigned_to 
+        AND u.department_id = $${idx}
+      )
+    `);
+    values.push(department_id);
+    idx++;
+  }
 
   let query = `SELECT * FROM assets`;
   if (whereClauses.length) {
@@ -219,12 +237,26 @@ exports.listAssets = async (filters = {}) => {
   return res.rows;
 };
 
+exports.getAssetDepartmentId = async (asset_id) => {
+  try {
+    const result = await db.query(
+      `SELECT u.department_id 
+       FROM assets a
+       LEFT JOIN users u ON a.assigned_to = u.user_id
+       WHERE a.asset_id = $1 OR a.public_id = $1`,
+      [asset_id]
+    );
+    return result.rows[0]?.department_id || null;
+  } catch (error) {
+    throw error;
+  }
+};
+
 exports.getAssetById = async (public_id) => {
-  if(!public_id){
+  if (!public_id) {
     throw new Error("Asset ID required");
   }
   try {
-    
     const query = `
           SELECT 
               a.*,
@@ -233,11 +265,13 @@ exports.getAssetById = async (public_id) => {
               v.vendorname AS vendor_name,
               l.long AS longitude,
               l.lat AS latitude,
+              u.department_id AS asset_department_id
           FROM assets a
           LEFT JOIN asset_categories c ON a.category_id = c.id
           LEFT JOIN sub_categories sc ON a.subcategory_id = sc.id
           LEFT JOIN vendors v ON a.vendor_id = v.id
           LEFT JOIN locations l ON a.location_id = l.id
+          LEFT JOIN users u ON a.assigned_to = u.user_id
           WHERE a.public_id = $1
       `;
     const values = [public_id];
@@ -263,11 +297,10 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
     throw new Error("Missing or invalid update fields");
   }
   try {
-    
     const setClauses = [];
     const values = [];
     let idx = 1;
-  
+
     // SET part of the query
     const refFieldMap = {
       category_name: {
@@ -289,7 +322,7 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
         asset_field: "vendor_id",
       },
     };
-  
+
     for (const [key, value] of Object.entries(updateFields)) {
       if (key === "longitude" || key === "latitude") {
         continue;
@@ -307,7 +340,10 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
           values.push(refId);
         } else {
           throw new Error(
-            `No such ${key.replace("_name", "")} exists. Please create it first.`
+            `No such ${key.replace(
+              "_name",
+              ""
+            )} exists. Please create it first.`
           );
         }
       } else {
@@ -315,7 +351,7 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
         values.push(value);
       }
     }
-  
+
     // handling for longitude and latitude update
     if ("longitude" in updateFields && "latitude" in updateFields) {
       // asset's current location_id
@@ -331,16 +367,16 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
         );
       }
     }
-  
+
     values.push(public_id); // For WHERE clause
-  
+
     const query = `
           UPDATE assets
           SET ${setClauses.join(", ")}
           WHERE public_id = $${idx}
           RETURNING *;
       `;
-  
+
     const res = await db.query(query, values);
     if (res.rows.length === 0) {
       return null; // Nothing found to update
@@ -367,11 +403,9 @@ exports.deleteAsset = async (public_id) => {
     const asset_id = assetRes.rows[0].asset_id;
 
     // Delete locations rows with asset_id, if exist
-    await db.query(
-      `DELETE FROM locations WHERE asset_id = $1`,
-      [asset_id]
-    );
-
+    await db.query(`DELETE FROM locations WHERE asset_id = $1`, [asset_id]);
+    // Delete files rows with asset_id, if exist
+    await db.query(`DELETE FROM asset_files WHERE asset_id = $1`, [asset_id]);
     // Delete asset from assets table
     const delRes = await db.query(
       `DELETE FROM assets WHERE asset_id = $1 RETURNING public_id`,
@@ -384,4 +418,53 @@ exports.deleteAsset = async (public_id) => {
     await db.query("ROLLBACK");
     throw err;
   }
+};
+
+exports.saveAssetFileMeta = async (data) => {
+  try {
+    const result = await db.query(
+      `INSERT INTO asset_files
+       (asset_id, public_id, bucket, file_path, file_type, mime_type, original_name)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [
+        data.asset_id,
+        data.public_id,
+        data.bucket,
+        data.file_path,
+        data.file_type,
+        data.mime_type,
+        data.original_name,
+      ]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw error;
+  }
+};
+
+exports.getFilesByFileId = async (fileId) => {
+  const res = await db.query(
+    `SELECT id, asset_id, bucket, file_path, original_name, mime_type
+     FROM asset_files
+     WHERE id = $1`,
+    [fileId]
+  );
+  return res.rows[0];
+};
+
+exports.deleteAssetFileMeta = async (fileId) => {
+  await db.query(
+    `DELETE FROM asset_files WHERE id = $1`,
+    [fileId]
+  );
+};
+
+exports.getFilesByAssetId = async (public_id) => {
+  const res = await db.query(
+    `SELECT bucket, file_path
+     FROM asset_files
+     WHERE public_id = $1`,
+    [public_id]
+  );
+  return res.rows;
 };

@@ -1,13 +1,14 @@
 // role based authorization
 exports.authorize = (...roles) => (req, res, next) => {
-  // Check that user info is set in the request (by prior authentication middleware)
   if (!req.user || !req.user.role) {
     return res.status(403).json({ message: "Access denied: No user role" });
   }
-  // Only allow if user role matches allowed roles (defaults to user if no roles given)
-  const allowedRoles = roles.length ? roles : ["user"];
+  const userRole = req.user.role.toUpperCase();
+  const allowedRoles = roles.length 
+    ? roles.map(r => r.toUpperCase()) 
+    : ["USER"];
   
-  if (!allowedRoles.includes(req.user.role)) {
+  if (!allowedRoles.includes(userRole)) {
     return res.status(403).json({ message: "Access denied: Insufficient role" });
   }
   next();

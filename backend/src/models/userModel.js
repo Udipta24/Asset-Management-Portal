@@ -29,12 +29,21 @@ async function getIdByName(table, column, value) {
     }
 }
 
-// create a new user
-exports.createUser = async (name, email, passwordHash, phone, designationName, departmentName, roleName = "user") => {
+// create a new user - ALWAYS registers with role 'USER' (never accepts role from client)
+exports.createUser = async (name, email, passwordHash, phone, designationName, departmentName) => {
     // insert the user into the database
     const {department_id, department_code} = await getIdByName("departments", "department_name", departmentName);
-    const designation_id = await getIdByName("designations", "designation_name", designationName);
-    const role_id = await getIdByName("roles", "role_name", roleName);
+    // Handle optional designation - if "NO DESIGNATION", set designation_id to null
+    let designation_id = null;
+    if (designationName && designationName !== "NO DESIGNATION") {
+        designation_id = await getIdByName("designations", "designation_name", designationName);
+        // If designation doesn't exist, throw error
+        if (!designation_id) {
+            throw new Error(`Designation "${designationName}" not found`);
+        }
+    }
+    // ALWAYS set role to 'USER' - never accept role from client input
+    const role_id = await getIdByName("roles", "role_name", "USER");
     try {
         await db.query("BEGIN");
         const result = await db.query(
@@ -81,6 +90,7 @@ exports.getUserByEmail = async (email) => {
                 u.public_id,
                 u.name,
                 u.email,
+                u.department_id,
                 d.department_name,
                 g.designation_name,
                 r.role_name,
@@ -98,3 +108,196 @@ exports.getUserByEmail = async (email) => {
         throw error;
     }
 }
+
+// get a user by user_id (internal id)
+exports.getUserById = async (user_id) => {
+    try {
+        const result = await db.query(
+            `SELECT 
+                u.user_id,
+                u.public_id,
+                u.name,
+                u.email,
+                u.department_id,
+                d.department_name,
+                g.designation_name,
+                r.role_name,
+                u.password_hash
+             FROM users u
+             LEFT JOIN departments d ON u.department_id = d.department_id
+             LEFT JOIN designations g ON u.designation_id = g.designation_id
+             LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+             LEFT JOIN roles r ON ur.role_id = r.role_id
+             WHERE u.user_id = $1`,
+            [user_id]
+        );
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
+}
+
+// get a user by public_id
+exports.getUserByPublicId = async (public_id) => {
+    try {
+        const result = await db.query(
+            `SELECT 
+                u.user_id,
+                u.public_id,
+                u.name,
+                u.email,
+                u.department_id,
+                d.department_name,
+                g.designation_name,
+                r.role_name,
+                u.password_hash
+             FROM users u
+             LEFT JOIN departments d ON u.department_id = d.department_id
+             LEFT JOIN designations g ON u.designation_id = g.designation_id
+             LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+             LEFT JOIN roles r ON ur.role_id = r.role_id
+             WHERE u.public_id = $1`,
+            [public_id]
+        );
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
+}
+// Update user details
+exports.updateUserById = async (user_id, updateFields) => {
+    // updateFields is an object with key-value pairs to be updated
+    // Only allow specific fields to be updated
+    const allowedFields = ["name", "email", "department_id", "designation_id"];
+    const setParts = [];
+    const values = [];
+    let idx = 1;
+
+    for (let key of allowedFields) {
+        if (Object.prototype.hasOwnProperty.call(updateFields, key)) {
+            setParts.push(`${key} = $${idx}`);
+            values.push(updateFields[key]);
+            idx++;
+        }
+    }
+
+    if (setParts.length === 0) {
+        throw new Error("No valid fields provided for update.");
+    }
+
+    values.push(user_id);
+
+    const query = `
+        UPDATE users
+        SET ${setParts.join(", ")}
+        WHERE user_id = $${idx}
+        RETURNING *;
+    `;
+
+    try {
+        const result = await db.query(query, values);
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Update password by email (for password reset)
+exports.updatePasswordByEmail = async (email, passwordHash) => {
+    try {
+        const result = await db.query(
+            `UPDATE users 
+             SET password_hash = $1 
+             WHERE email = $2 
+             RETURNING user_id, email`,
+            [passwordHash, email]
+        );
+        return result.rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Promote a USER to ASSET_MANAGER
+// Enforces: Only one ASSET_MANAGER per department (database constraint)
+exports.promoteToAssetManager = async (user_id) => {
+    try {
+        await db.query("BEGIN");
+
+        // Get user details
+        const user = await exports.getUserById(user_id);
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        // Check if user is already ASSET_MANAGER
+        if (user.role_name === "ASSET_MANAGER") {
+            throw new Error("User is already an ASSET_MANAGER");
+        }
+
+        // Check if user is not USER role
+        if (user.role_name !== "USER") {
+            throw new Error("Only USER role can be promoted to ASSET_MANAGER");
+        }
+
+        // Check if department already has an ASSET_MANAGER
+        const existingManager = await db.query(
+            `SELECT u.user_id 
+             FROM users u
+             JOIN user_roles ur ON u.user_id = ur.user_id
+             JOIN roles r ON ur.role_id = r.role_id
+             WHERE u.department_id = $1 AND r.role_name = 'ASSET_MANAGER'`,
+            [user.department_id]
+        );
+
+        if (existingManager.rows.length > 0 && existingManager.rows[0].user_id !== user_id) {
+            throw new Error("This department already has an ASSET_MANAGER");
+        }
+
+        // Get ASSET_MANAGER role_id
+        const assetManagerRoleId = await getIdByName("roles", "role_name", "ASSET_MANAGER");
+        if (!assetManagerRoleId) {
+            throw new Error("ASSET_MANAGER role not found in database");
+        }
+
+        // Update user role from USER to ASSET_MANAGER
+        // First, get current USER role_id
+        const userRoleId = await getIdByName("roles", "role_name", "USER");
+        
+        // Delete old USER role
+        await db.query(
+            "DELETE FROM user_roles WHERE user_id = $1 AND role_id = $2",
+            [user_id, userRoleId]
+        );
+
+        // Insert new ASSET_MANAGER role
+        await db.query(
+            "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)",
+            [user_id, assetManagerRoleId]
+        );
+
+        await db.query("COMMIT");
+
+        // Return updated user
+        return await exports.getUserById(user_id);
+    } catch (error) {
+        await db.query("ROLLBACK");
+        throw error;
+    }
+};
+
+// Delete user by id
+exports.deleteUserById = async (user_id) => {
+    try {
+        // Clean up related records first, if necessary, e.g., user_roles
+        await db.query("DELETE FROM user_roles WHERE user_id = $1", [user_id]);
+        // Delete user
+        const result = await db.query(
+            "DELETE FROM users WHERE user_id = $1 RETURNING *",
+            [user_id]
+        );
+        return result.rows[0]; // Return deleted user info
+    } catch (error) {
+        throw error;
+    }
+};

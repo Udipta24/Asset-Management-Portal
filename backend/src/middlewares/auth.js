@@ -20,6 +20,11 @@ exports.authenticate = (req, res, next) => {
     req.user = payload;
     next();
   } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Session expired. Please login again."
+      });
+    }
     return res.status(401).json({ message: "Invalid token" });
   }
 };
