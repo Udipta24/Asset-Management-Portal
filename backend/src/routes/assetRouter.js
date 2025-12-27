@@ -27,6 +27,28 @@ const upload = multer({
   },
 });
 
+// list all assets (accessible by authenticated users)
+router.get("/", authenticate, assetController.list);
+// get one asset (admin and asset_manager depart. restrictions checked in controller)
+router.get("/:id", authenticate, assetController.getOne);
+// get image preview
+router.get(
+  "/files/:fileId/image-preview",
+  authenticate,
+  assetController.getAssetImagePreview
+);
+// get file view (all authenticated users, role-based restrictions handled in controller)
+router.get(
+  "/files/:fileId/view",
+  authenticate,
+  assetController.getAssetFile
+);
+// download asset file (all authenticated users, role-based restrictions handled in controller)
+router.get(
+  "/assets/files/:fileId/download",
+  authenticate,
+  assetController.getAssetFile
+);
 // create asset (admin or asset_manager)
 router.post(
   "/",
@@ -38,15 +60,15 @@ router.post(
   ]),
   assetController.create
 );
-// list all assets (accessible by authenticated users)
-router.get("/", authenticate, assetController.list);
-// get one asset (admin and asset_manager depart. restrictions checked in controller)
-router.get("/:id", authenticate, assetController.getOne);
 // update asset (admin and asset_manager, depart. restrictions checked in controller)
 router.patch(
   "/:id",
   authenticate,
   authorize("admin", "asset_manager"),
+  upload.fields([
+    { name: "images", maxCount: 5 },
+    { name: "documents", maxCount: 5 },
+  ]),
   assetController.update
 );
 // delete asset (admin and asset_manager, depart. restrictions checked in controller)
@@ -62,13 +84,6 @@ router.delete(
   authenticate,
   authorize("admin", "asset_manager"),
   assetController.deleteAssetFile
-);
-
-// download asset file (all authenticated users, role-based restrictions handled in controller)
-router.get(
-  "/assets/files/:fileId/download",
-  authenticate,
-  assetController.downloadAssetFile
 );
 
 module.exports = router;

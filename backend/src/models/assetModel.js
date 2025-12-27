@@ -65,12 +65,13 @@ exports.createAsset = async (data) => {
     const asset_id = insertRes.rows[0].asset_id;
     // Insert into locations table asset_id, latitude, longitude from data, returning location_id
     let location_id = null;
-    if (data.latitude && data.longitude) {
+    if (data.location) {
+      const {latitude, longitude, suburb, city, district, state, country} = data.location;
       const locRes = await client.query(
-        `INSERT INTO locations (asset_id, latitude, longitude)
-                 VALUES ($1, $2, $3)
+        `INSERT INTO locations (asset_id, latitude, longitude, suburb, city, district, state, country)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                  RETURNING location_id`,
-        [asset_id, data.latitude, data.longitude]
+        [asset_id, latitude, longitude, suburb, city, district, state, country]
       );
       location_id = locRes.rows[0].location_id;
     }
@@ -203,7 +204,7 @@ exports.listAssets = async (filters = {}) => {
   if (department_id) {
     whereClauses.push(`
       EXISTS (
-        SELECT 1 FROM users u 
+        SELECT 1 FROM users_data u 
         WHERE u.user_id = assets.assigned_to 
         AND u.department_id = $${idx}
       )
@@ -242,7 +243,7 @@ exports.getAssetDepartmentId = async (asset_id) => {
     const result = await db.query(
       `SELECT u.department_id 
        FROM assets a
-       LEFT JOIN users u ON a.assigned_to = u.user_id
+       LEFT JOIN users_data u ON a.assigned_to = u.user_id
        WHERE a.asset_id = $1 OR a.public_id = $1`,
       [asset_id]
     );
@@ -320,6 +321,12 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
         id_field: "vendor_id",
         name_field: "vendor_name",
         asset_field: "vendor_id",
+      },
+      user_public_id: {
+        table: "users_data",
+        id_field: "user_id",
+        name_field: "public_id",
+        asset_field: "assigned_to",
       },
     };
 

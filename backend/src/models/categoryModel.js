@@ -98,7 +98,7 @@ exports.deleteCategory = async (id) => {
 exports.listAllCategories = async () => {
   try {
     const result = await db.query(
-      "SELECT * FROM asset_categories"
+      "SELECT category_id, category_name, category_code FROM asset_categories ORDER BY category_name"
     );
     return result.rows;
   } catch (error) {

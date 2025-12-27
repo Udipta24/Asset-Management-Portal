@@ -15,14 +15,14 @@ const designationRoutes = require("./routes/designationRouter");
 
 const app = express();
 
-console.log("authRoutes:", typeof authRoutes);
-console.log("assetRoutes:", typeof assetRoutes);
-console.log("userRoutes:", typeof userRoutes);
-console.log("categoryRoutes:", typeof categoryRoutes);
-console.log("subcategoryRoutes:", typeof subcategoryRoutes);
-console.log("departmentRoutes:", typeof departmentRoutes);
-console.log("designationRoutes:", typeof designationRoutes);
-console.log("errorHandler:", typeof errorHandler);
+// console.log("authRoutes:", typeof authRoutes);
+// console.log("assetRoutes:", typeof assetRoutes);
+// console.log("userRoutes:", typeof userRoutes);
+// console.log("categoryRoutes:", typeof categoryRoutes);
+// console.log("subcategoryRoutes:", typeof subcategoryRoutes);
+// console.log("departmentRoutes:", typeof departmentRoutes);
+// console.log("designationRoutes:", typeof designationRoutes);
+// console.log("errorHandler:", typeof errorHandler);
 
 app.use(express.json());
 app.use(cookieParser());

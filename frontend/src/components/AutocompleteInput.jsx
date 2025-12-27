@@ -4,13 +4,22 @@ export default function AutocompleteInput({ value, onChange, fetcher, placeholde
   const [query, setQuery] = useState(value || "");
   const [suggestions, setSuggestions] = useState([]);
 
+    //we use this as user types fast and previous result eg of "eve" come after i type "ever"
+    //so api calls are async and return out of order
+    //so we added timeout 200ms before showing menu
+    //we make async function inside it as useEffect itself cannot be async
+    //!query mean if no query then so no suggestion , empty array, query comes from onchange setquery inside form
+    //here fetcher is like any function here that calls get request to functions in backend like
+    //getUsers,getLocations,....etc.
+    //
+
     useEffect(() => {
     let ignore = false;
 
     const run = async () => {
         if (!query) {
-        if (!ignore) setSuggestions([]);
-        return;
+          if (!ignore) setSuggestions([]);
+          return;
         }
 
         const res = await fetcher(query);
@@ -25,8 +34,12 @@ export default function AutocompleteInput({ value, onChange, fetcher, placeholde
     };
     }, [query, fetcher]);
 
+    //return() is a clean up function, it doesnt let old queries run 
+    // by setting ignore true and clear the "timeout" from queue, only latest query runs
+    //old query still finishes all of that,but no result.
+  
 
-
+    
   return (
     <div className="relative">
       <input
@@ -48,7 +61,7 @@ export default function AutocompleteInput({ value, onChange, fetcher, placeholde
               onClick={() => {
                 setQuery(item);
                 onChange(item);
-                setSuggestions([]);
+                setSuggestions([]); //menu closes after clicking
               }}
             >
               {item}
@@ -59,3 +72,7 @@ export default function AutocompleteInput({ value, onChange, fetcher, placeholde
     </div>
   );
 }
+
+
+
+//need to fix autocomplete, not fixed auto complete

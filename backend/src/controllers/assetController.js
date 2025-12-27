@@ -56,10 +56,9 @@ exports.create = async (req, res, next) => {
       !model_number ||
       !purchase_date ||
       !purchase_cost ||
-      !vendor ||
+      // !vendor ||
       !status ||
       !location ||
-      !assigned_to ||
       !warranty_expiry
     ) {
       return res.status(400).json({ error: "Missing required asset details" });
@@ -70,30 +69,24 @@ exports.create = async (req, res, next) => {
       const userModel = require("../models/userModel");
       const assignedUser = await userModel.getUserByPublicId(assigned_to);
       if (!assignedUser) {
-        return res
-          .status(400)
-          .json({ error: "assigned_to user does not exist" });
+        return res.status(400).json({ error: "Assigned user does not exist" });
       }
     }
 
     // Prepare payload, passing assigned_to and description (possibly as null)
-    const latitude = location?.latitude;
-    const longitude = location?.longitude;
-
     const payload = {
       asset_name,
       category,
       subcategory,
       serial_number,
       model_number,
-      purchase_date,
-      purchase_cost,
+      purchase_date: purchase_date ? new Date(purchase_date) : null,
+      purchase_cost: purchase_cost ? Number(purchase_cost) : null,
       vendor,
       status,
-      latitude,
-      longitude,
+      location,
       assigned_to,
-      warranty_expiry,
+      warranty_expiry: warranty_expiry ? new Date(warranty_expiry) : null,
       description,
     };
 
@@ -114,7 +107,10 @@ exports.create = async (req, res, next) => {
       }
     }
 
-    res.status(201).json(asset);
+    res.status(201).json({
+      message: "Asset created successfully",
+      asset,
+    });
   } catch (err) {
     next(err);
   }
@@ -144,7 +140,8 @@ exports.list = async (req, res, next) => {
     const userRole = req.user.role.toUpperCase();
     if (
       (userRole === "ASSET_MANAGER" || userRole === "USER") &&
-      req.user.department_id && req.query.assigned_to != "NOT ASSIGNED"
+      req.user.department_id &&
+      req.query.assigned_to != "NOT ASSIGNED"
     ) {
       filters.department_id = req.user.department_id;
     }
@@ -200,6 +197,23 @@ exports.update = async (req, res, next) => {
     }
 
     const updated = await assetModel.updateAsset(req.params.id, req.body);
+
+    const { asset_id, public_id } = updated;
+
+    // Handle images
+    if (req.files?.images?.length) {
+      for (const file of req.files.images) {
+        await uploadFile(file, asset_id, public_id);
+      }
+    }
+
+    // Handle documents
+    if (req.files?.documents?.length) {
+      for (const file of req.files.documents) {
+        await uploadFile(file, asset_id, public_id);
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     next(err);
@@ -263,10 +277,11 @@ exports.deleteAssetFile = async (req, res, next) => {
   }
 };
 
-exports.downloadAssetFile = async (req, res, next) => {
+exports.getAssetFile = async (req, res, next) => {
   try {
     const { fileId } = req.params;
     const userRole = req.user.role.toUpperCase();
+    const purpose = req.body.intent;
 
     // Get file metadata by fileId
     const file = await assetModel.getFilesByFileId(fileId);
@@ -278,10 +293,16 @@ exports.downloadAssetFile = async (req, res, next) => {
     // ADMIN: Can download any file
     // ASSET_MANAGER / USER: Can download files from assets in their department OR unassigned assets
     if (userRole !== "ADMIN") {
-      const assetDepartmentId = await assetModel.getAssetDepartmentId(file.asset_id);
-      if (assetDepartmentId !== null && assetDepartmentId !== req.user.department_id) {
+      const assetDepartmentId = await assetModel.getAssetDepartmentId(
+        file.asset_id
+      );
+      if (
+        assetDepartmentId !== null &&
+        assetDepartmentId !== req.user.department_id
+      ) {
         return res.status(403).json({
-          error: "Access denied: Cannot download files from assets outside your department",
+          error:
+            "Access denied: Cannot download files from assets outside your department",
         });
       }
     }
@@ -296,16 +317,44 @@ exports.downloadAssetFile = async (req, res, next) => {
     }
 
     // Set headers for download
-    res.setHeader("Content-Disposition", `attachment; filename="${file.original_name}"`);
+    if (purpose === "download") {
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${file.original_name}"`
+      );
+    } else if (purpose === "view") {
+      res.setHeader("Content-Disposition", "inline");
+    }
     res.setHeader("Content-Type", file.mime_type);
 
     // Pipe the readable stream or buffer to the response
-    if (typeof data.pipe === 'function') {
+    if (typeof data.pipe === "function") {
       data.pipe(res);
     } else {
       // If Supabase returns a Blob or Buffer
       res.end(Buffer.from(await data.arrayBuffer()));
     }
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getAssetImagePreview = async (req, res, next) => {
+  try {
+    const { fileId } = req.params;
+
+    const file = await assetModel.getFilesByFileId(fileId);
+    if (!file || file.file_type !== "image") {
+      return res.status(404).json({ error: "Image not found" });
+    }
+
+    const { data, error } = await supabase.storage
+      .from(file.bucket)
+      .createSignedUrl(file.file_path, 60); // 60 seconds
+
+    if (error) throw error;
+
+    res.json({ previewUrl: data.signedUrl });
   } catch (err) {
     next(err);
   }

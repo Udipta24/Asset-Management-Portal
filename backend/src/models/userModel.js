@@ -5,14 +5,11 @@ const db = require("../config/db");
 async function getIdByName(table, column, value) {
     let query, params;
     if (table === "departments") {
-        query = `SELECT department_id AS id, department_code FROM departments WHERE ${column} = $1`;
+        query = `SELECT department_code FROM departments WHERE ${column} = $1`;
         params = [value];
         const result = await db.query(query, params);
         if (result.rows.length > 0) {
-            return {
-                id: result.rows[0].id,
-                department_code: result.rows[0].department_code
-            };
+            return result.rows[0].department_code;
         } else {
             return null;
         }
@@ -30,24 +27,15 @@ async function getIdByName(table, column, value) {
 }
 
 // create a new user - ALWAYS registers with role 'USER' (never accepts role from client)
-exports.createUser = async (name, email, passwordHash, phone, designationName, departmentName) => {
+exports.createUser = async (name, email, passwordHash, phone, designation_id, department_id) => {
     // insert the user into the database
-    const {department_id, department_code} = await getIdByName("departments", "department_name", departmentName);
-    // Handle optional designation - if "NO DESIGNATION", set designation_id to null
-    let designation_id = null;
-    if (designationName && designationName !== "NO DESIGNATION") {
-        designation_id = await getIdByName("designations", "designation_name", designationName);
-        // If designation doesn't exist, throw error
-        if (!designation_id) {
-            throw new Error(`Designation "${designationName}" not found`);
-        }
-    }
+    const department_code = await getIdByName("departments", "department_id", department_id);
     // ALWAYS set role to 'USER' - never accept role from client input
     const role_id = await getIdByName("roles", "role_name", "USER");
     try {
         await db.query("BEGIN");
         const result = await db.query(
-            `INSERT INTO users (name, email, password_hash, department_id, designation_id, phone)
+            `INSERT INTO users_data (name, email, password_hash, department_id, designation_id, phone)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING user_id, name, email`,
             [name, email, passwordHash, department_id, designation_id, phone]
@@ -58,7 +46,7 @@ exports.createUser = async (name, email, passwordHash, phone, designationName, d
     
         // update db and set public_id
         await db.query(
-            `UPDATE users SET public_id = $1 WHERE user_id = $2`,
+            `UPDATE users_data SET public_id = $1 WHERE user_id = $2`,
             [newUserPublicId, newUser.user_id]
         );
         
@@ -95,7 +83,7 @@ exports.getUserByEmail = async (email) => {
                 g.designation_name,
                 r.role_name,
                 u.password_hash
-             FROM users u
+             FROM users_data u
              LEFT JOIN departments d ON u.department_id = d.department_id
              LEFT JOIN designations g ON u.designation_id = g.designation_id
              LEFT JOIN user_roles ur ON u.user_id = ur.user_id
@@ -123,7 +111,7 @@ exports.getUserById = async (user_id) => {
                 g.designation_name,
                 r.role_name,
                 u.password_hash
-             FROM users u
+             FROM users_data u
              LEFT JOIN departments d ON u.department_id = d.department_id
              LEFT JOIN designations g ON u.designation_id = g.designation_id
              LEFT JOIN user_roles ur ON u.user_id = ur.user_id
@@ -151,7 +139,7 @@ exports.getUserByPublicId = async (public_id) => {
                 g.designation_name,
                 r.role_name,
                 u.password_hash
-             FROM users u
+             FROM users_data u
              LEFT JOIN departments d ON u.department_id = d.department_id
              LEFT JOIN designations g ON u.designation_id = g.designation_id
              LEFT JOIN user_roles ur ON u.user_id = ur.user_id
@@ -188,7 +176,7 @@ exports.updateUserById = async (user_id, updateFields) => {
     values.push(user_id);
 
     const query = `
-        UPDATE users
+        UPDATE users_data
         SET ${setParts.join(", ")}
         WHERE user_id = $${idx}
         RETURNING *;
@@ -206,7 +194,7 @@ exports.updateUserById = async (user_id, updateFields) => {
 exports.updatePasswordByEmail = async (email, passwordHash) => {
     try {
         const result = await db.query(
-            `UPDATE users 
+            `UPDATE users_data 
              SET password_hash = $1 
              WHERE email = $2 
              RETURNING user_id, email`,
@@ -243,7 +231,7 @@ exports.promoteToAssetManager = async (user_id) => {
         // Check if department already has an ASSET_MANAGER
         const existingManager = await db.query(
             `SELECT u.user_id 
-             FROM users u
+             FROM users_data u
              JOIN user_roles ur ON u.user_id = ur.user_id
              JOIN roles r ON ur.role_id = r.role_id
              WHERE u.department_id = $1 AND r.role_name = 'ASSET_MANAGER'`,
@@ -293,7 +281,7 @@ exports.deleteUserById = async (user_id) => {
         await db.query("DELETE FROM user_roles WHERE user_id = $1", [user_id]);
         // Delete user
         const result = await db.query(
-            "DELETE FROM users WHERE user_id = $1 RETURNING *",
+            "DELETE FROM users_data WHERE user_id = $1 RETURNING *",
             [user_id]
         );
         return result.rows[0]; // Return deleted user info

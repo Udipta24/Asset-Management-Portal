@@ -10,22 +10,25 @@ dotenv.config();
 // register a new user
 exports.register = async (req, res, next) => {
   try {
+    console.log(req.body);
     const { 
       full_name, 
       email, 
       password, 
-      phone = "NO PHONE", 
-      designation = "NO DESIGNATION", 
-      department 
+      phone, 
+      department_id, 
+      designation_id, 
     } = req.body;
     // check if required fields are provided
     if (
       !full_name ||
       !email ||
       !password ||
-      !department
+      !phone ||
+      !department_id ||
+      !designation_id
     ) {
-      return res.status(400).json({ message: "full_name, email, password, and department are required" });
+      return res.status(400).json({ message: "All fields are required" });
     }
     // check if user already exists
     const user = await getUserByEmail(email);
@@ -35,7 +38,7 @@ exports.register = async (req, res, next) => {
     // hash password
     const passwordHash = await bcrypt.hash(
       password,
-      process.env.BCRYPT_SALT_ROUNDS
+      Number(process.env.BCRYPT_SALT_ROUNDS)
     );
     // create the new user - role is ALWAYS set to 'USER' server-side
     const newUser = await createUser(
@@ -43,8 +46,8 @@ exports.register = async (req, res, next) => {
       email,
       passwordHash,
       phone,
-      designation,
-      department
+      Number(department_id),
+      Number(designation_id)
     );
     // return the new user
     res.status(201).json({
@@ -164,6 +167,7 @@ exports.forgotPassword = async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+    console.log(resetToken);
 
     res.json({
       message: "Reset token generated successfully",
@@ -177,7 +181,10 @@ exports.forgotPassword = async (req, res, next) => {
 // Reset password - validates token and updates password
 exports.resetPassword = async (req, res, next) => {
   try {
-    const { token, new_password } = req.body;
+    const new_password = req.body.password;
+    const token = req.query.token;
+
+    console.log(new_password, token);
 
     if (!token || !new_password) {
       return res.status(400).json({

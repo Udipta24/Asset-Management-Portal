@@ -40,23 +40,28 @@ async function generateUniqueSubcatCode(subCategoryName) {
 
 // Create a new subcategory
 exports.addSubcategory = async (data) => {
-    try {
-        const subCatCode = await generateUniqueSubcatCode(data.category_name);
-        const result = await db.query(
-          "INSERT INTO sub_categories (category_id, subcategory_name, description) VALUES ($1, $2, $3) RETURNING category_name, category_code",
-          [data.category_id, data.subcategory_name, subCatCode, data.description || "No description"]
-        );
-        return result.rows[0];
-      } catch (error) {
-        throw err;
-      }
+  try {
+    const subCatCode = await generateUniqueSubcatCode(data.category_name);
+    const result = await db.query(
+      "INSERT INTO sub_categories (category_id, subcategory_name, description) VALUES ($1, $2, $3) RETURNING category_name, category_code",
+      [
+        data.category_id,
+        data.subcategory_name,
+        subCatCode,
+        data.description || "No description",
+      ]
+    );
+    return result.rows[0];
+  } catch (error) {
+    throw err;
+  }
 };
 
 // Update a subcategory's description only
 exports.updateSubcategoryDescription = async (id, newDescription) => {
   try {
     const result = await db.query(
-      "UPDATE sub_categories SET description = $1 WHERE id = $2 RETURNING subcategory_name, subcategory_code, description",
+      "UPDATE sub_categories SET description = $1 WHERE subcategory_id = $2 RETURNING subcategory_name, subcategory_code, description",
       [newDescription, id]
     );
     if (result.rows.length === 0) {
@@ -94,7 +99,9 @@ exports.deleteSubcategory = async (id) => {
 // List all subcategories
 exports.listAllSubcategories = async () => {
   try {
-    const result = await db.query("SELECT * FROM sub_categories");
+    const result = await db.query(
+      "SELECT subcategory_id, subcategory_name, subcategory_code FROM sub_categories ORDER BY subcategory_name"
+    );
     return result.rows;
   } catch (error) {
     throw error;
