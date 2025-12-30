@@ -1,19 +1,22 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/api";
 import { MdLogout } from "react-icons/md";
 import { FaUserCircle } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 
 export default function Topbar() {
-  const nav = useNavigate();
+  const navigate = useNavigate();
+  const{currentUser : user} = useAuth();
 
   const handleLogout = async () => {
     try {
-      await API.post("/auth/logout")
+      await API.post("/auth/logout");
     } catch (error) {
       // Do nothing
     } finally {
       localStorage.removeItem("accessToken");
-      nav("/login");
+      navigate("/login");
     }
   };
 
@@ -27,7 +30,7 @@ export default function Topbar() {
       {/* Right */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate("/profile")}
+          onClick={() => navigate(`/users/profile/${user.public_id}`)}
           title="Profile"
           className="hover:text-gray-200 transition"
         >

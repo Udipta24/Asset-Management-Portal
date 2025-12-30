@@ -1,13 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, createContext, useContext } from "react";
 import { Navigate } from "react-router-dom";
 import API from "../api/api";
 
 
-//it takes the JSX wrapped inside it.
-//higher order wrapper component
-//it gets the user data,if the promise is fulfilled or resolved then .then() works ie reisters a callback
-//if any any error then it set ok to false and we get to login screen again 
-//
+
 export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [ok, setOk] = useState(false);

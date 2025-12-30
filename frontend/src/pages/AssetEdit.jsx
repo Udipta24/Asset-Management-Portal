@@ -4,6 +4,14 @@ import API from "../api/api";
 import { FiFileText } from "react-icons/fi";
 import { ImBin } from "react-icons/im";
 import Swal from "sweetalert2";
+function MapClickHandler({ onPick }) {
+  useMapEvents({
+    click(e) {
+      onPick(e.latlng);
+    },
+  });
+  return null;
+}
 export default function AssetEdit() {
   const url = import.meta.env.VITE_API_URL;
   const { id } = useParams(); // public_id

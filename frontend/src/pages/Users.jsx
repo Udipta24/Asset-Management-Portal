@@ -1,81 +1,167 @@
 import React, { useEffect, useState, useRef } from "react";
 import API from "../api/api";
 import { useNavigate } from "react-router-dom";
+import { FaUserCircle, FaArrowUp, FaFilter } from "react-icons/fa";
+import { useReferenceData } from "../hooks/useReferenceData";
+import Swal from "sweetalert2";
 
 export default function Users() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
-  const navigate=useNavigate();
-  const alertRef=useRef(false);
-  //if we change users then re render
-  //if we change useref.current no re-render,
-
-  //to prevent infinite alert during an error
-  //below problem,react strictmode runs useeffect twice so multiple alerts
-  //or there can be no history ,then it will cause loops
-  // useEffect(() => {
-  //   API.get("/users")
-  //     .then(res => setUsers(res.data))
-  //     .catch(() => {
-  //         alert("You do not have permission to view users");
-  //         navigate(-1);
-  //       }
-  //     )
-  // }, []);
-  //we cant use variable, as componeents re render, that variable will be false aggain,as code runs again
-  //useRef here is an object with .current property that persists across renders without causing re render
+  const [filters, setFilters] = useState({
+    department_id: "",
+    designation_id: "",
+  });
+  const { refreshPublicReferenceData } = useReferenceData();
   useEffect(() => {
-    API.get("/users")
-      .then(res => setUsers(res.data))
-      .catch(err => {
-        if(!alertRef.current){
+    refreshPublicReferenceData();
+  }, []);
+  const { departments, designations } = useReferenceData();
+  const fetchUsers = async () => {
+    const res = await API.get("/user", { params: filters });
+    setUsers(res.data.users);
+  };
 
-          alertRef.current=true;
-          alert("You do not have permission to view users");
-          console.error(err);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-          if(window.history.length>1){
-            navigate(-1);
-          }else{
-            navigate("/");
-          }
-          
-        }
-      }
-      )
-  }, [navigate]);
-  //navigate inside dependency dont do much , runs only once
-
+  const promoteUser = async (publicId) => {
+    await API.post(`/user/${publicId}/promote`);
+    Swal.fire({
+      icon: "success",
+      title: `User ${publicId} promoted to ASSET MANAGER`,
+      text: "User can manage assets of his/her department"
+    });
+    fetchUsers();
+  };
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Users (Admin Only)</h2>
+    <div className="max-w-full bg-white p-6 rounded shadow space-y-4">
+      <h1 className="text-2xl font-bold mb-6">Users</h1>
 
-      <div className="bg-white rounded-lg shadow p-4">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-2">Name</th>
-              <th className="text-left p-2">Email</th>
-              <th className="text-left p-2">Department</th>
-              <th className="text-left p-2">Roles</th>
+      {/* Filters */}
+      <div className="flex gap-4 mb-6 items-end">
+        <div>
+          <label className="text-sm text-gray-600">Department </label>
+          <select
+            className={`border rounded px-3 py-2 w-48 ${
+              filters.department_id === "" ? "text-gray-400" : "text-black"
+            }`}
+            value={filters.department_id}
+            onChange={(e) =>
+              setFilters({ ...filters, department_id: e.target.value })
+            }
+          >
+            <option value="">All Departments</option>
+            {departments.map((dep) => (
+              <option key={dep.department_id} value={dep.department_id}>
+                {dep.department_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm text-gray-600">Designation </label>
+          <select
+            className={`border rounded px-3 py-2 w-48 ${
+              filters.designation_id === "" ? "text-gray-400" : "text-black"
+            }`}
+            value={filters.designation_id}
+            onChange={(e) =>
+              setFilters({ ...filters, designation_id: e.target.value })
+            }
+          >
+            <option value="">All Designations</option>
+            {designations.map((des) => (
+              <option key={des.designation_id} value={des.designation_id}>
+                {des.designation_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={fetchUsers}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          <FaFilter /> Apply
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
+        <table className="w-full border border-orange-400 rounded">
+          <thead className="bg-gradient-to-br from-orange-300 via-orange-200 to-orange-300 text-orange-800">
+            <tr>
+              <th className="border border-orange-400 px-4 py-2 text-left">
+                User ID
+              </th>
+              <th className="border border-orange-400 px-4 py-2 text-left">
+                Name
+              </th>
+              <th className="border border-orange-400 px-4 py-2 text-left">
+                Department
+              </th>
+              <th className="border border-orange-400 px-4 py-2 text-left">
+                Designation
+              </th>
+              <th className="border border-orange-400 px-4 py-2 text-center">
+                Actions
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {users.map(u => (
-              <tr key={u.user_id} className="border-b">
-                <td className="p-2">{u.full_name}</td>
-                <td className="p-2">{u.email}</td>
-                <td className="p-2">{u.department || "-"}</td>
-                <td className="p-2">{u.roles.join(", ")}</td>
+            {users.map((u) => (
+              <tr key={u.user_id} className="hover:bg-orange-50">
+                <td className="border border-orange-200 px-4 py-2 font-mono">
+                  {u.public_id}
+                </td>
+                <td className="border border-orange-200 px-4 py-2">{u.name}</td>
+                <td className="border border-orange-200 px-4 py-2">
+                  {u.department_name}
+                </td>
+                <td className="border border-orange-200 px-4 py-2">
+                  {u.designation_name}
+                </td>
+
+                <td className="border border-orange-200 px-4 py-2 flex justify-center gap-3">
+                  {/* View Profile */}
+                  <button
+                    onClick={() => navigate(`/users/profile/${u.public_id}`)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="View Profile"
+                  >
+                    <FaUserCircle size={18} />
+                  </button>
+
+                  {/* Promote */}
+                  {u.role_name === "USER" && (
+                    <button
+                      onClick={() => promoteUser(u.public_id)}
+                      className="text-green-600 hover:text-green-800"
+                      title="Promote to Asset Manager"
+                    >
+                      <FaArrowUp size={18} />
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
+            {users.length === 0 && (
+              <tr>
+                <td
+                  colSpan="5"
+                  className="border border-orange-200 px-4 py-2 text-center text-gray-500"
+                >
+                  No users found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
     </div>
   );
 }
-
-// if u.roles=["str1","str2"] then on .join(", *gap* ") we get "str1, str2" 
-//tables have gaps on left and right due to paddign on both sides usign p-4

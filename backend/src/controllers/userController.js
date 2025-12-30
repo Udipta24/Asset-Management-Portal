@@ -5,6 +5,7 @@ const {
   updateUserById,
   deleteUserById,
   promoteToAssetManager,
+  getAllUsers,
 } = require("../models/userModel");
 
 // Verify current session - returns user info if logged in
@@ -19,6 +20,7 @@ exports.me = async (req, res, next) => {
     res.json({
       user: {
         user_id: user.user_id,
+        public_id: user.public_id,
         name: user.name,
         email: user.email,
         role: user.role_name,
@@ -65,6 +67,7 @@ exports.promoteToAssetManager = async (req, res, next) => {
 
     // Get user by public_id to get internal user_id
     const targetUser = await getUserByPublicId(userId);
+    console.log(targetUser);
     if (!targetUser) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -75,9 +78,14 @@ exports.promoteToAssetManager = async (req, res, next) => {
         message: "User is already an ASSET_MANAGER",
       });
     }
+    if (targetUser.role_name === "ADMIN") {
+      return res.status(400).json({
+        message: "User is already an ADMIN",
+      });
+    }
 
     // Promote user
-    const promotedUser = await promoteToAssetManager(targetUser.user_id);
+    const promotedUser = await promoteToAssetManager(targetUser.user_id, targetUser.department_id);
 
     res.json({
       message: "User promoted to ASSET_MANAGER successfully",
@@ -111,6 +119,28 @@ exports.deleteUser = async (req, res, next) => {
     }
 
     res.json({ message: "User deleted successfully", user: deletedUser });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.listUsers = async (req, res, next) => {
+  try {
+    const { department_id, designation_id } = req.query;
+
+    const users = await getAllUsers({ department_id, designation_id });
+
+    res.json({ users });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.userByPublicId = async (req, res, next) => {
+  try {
+    const user = await getUserByPublicId(req.params.publicId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ user });
   } catch (err) {
     next(err);
   }
