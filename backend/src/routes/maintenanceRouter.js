@@ -38,20 +38,3 @@ router.delete(
   maintenanceController.deleteMaintenance
 );
 
-/**
- * Attachments
- */
-router.post(
-  "/:maintenanceId/attachments",
-  authenticate,
-  authorize("admin", "asset_manager"),
-  maintenanceController.addAttachment
-);
-
-router.get(
-  "/:maintenanceId/attachments",
-  authenticate,
-  maintenanceController.getAttachments
-);
-
-module.exports = router;

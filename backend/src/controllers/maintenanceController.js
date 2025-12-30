@@ -99,34 +99,3 @@ const {
     }
   };
   
-  /**
-   * Add attachment
-   */
-  exports.addAttachment = async (req, res, next) => {
-    try {
-      const attachment = await addAttachment({
-        ...req.body,
-        uploaded_by: req.user.user_id,
-      });
-  
-      res.status(201).json({
-        message: "Attachment added",
-        attachment,
-      });
-    } catch (err) {
-      next(err);
-    }
-  };
-  
-  /**
-   * Get attachments
-   */
-  exports.getAttachments = async (req, res, next) => {
-    try {
-      const attachments = await getAttachments(req.params.maintenanceId);
-      res.json({ attachments });
-    } catch (err) {
-      next(err);
-    }
-  };
-  
