@@ -6,8 +6,6 @@ import { ReferenceDataProvider } from "./context/ReferenceDataContext.jsx";
 
 // Layout
 import MainLayout from "./layout/MainLayout.jsx";
-import SidebarLayout from "./components/layout/SidebarLayout";
-import Sidebar from "./components/Sidebar.jsx";
 
 // Auth
 import ProtectedRoute from "./auth/ProtectedRoute";
@@ -23,6 +21,12 @@ import AssetCreate from "./pages/AssetCreate";
 import AssetDetail from "./pages/AssetDetail";
 import AssetAssign from "./pages/AssetAssign";
 import AssetEdit from "./pages/AssetEdit";
+import AssetList from "./pages/AssetList";
+import AssetLocations from "./pages/AssetLocations"
+import Departments from "./pages/Departments";
+import Designations from "./pages/Designations";
+import Categories from "./pages/Categories";
+import Subcategories from "./pages/Subcategories"
 
 import MaintenanceLayout from "./pages/maintenance/MaintenanceLayout";
 import MaintenanceList from "./pages/maintenance/MaintenanceList.jsx";
@@ -60,7 +64,7 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Sidebar />
+              <MainLayout />
             </ProtectedRoute>
           }
         >
@@ -68,10 +72,16 @@ export default function App() {
           <Route index element={<Dashboard />} />
 
           {/* Assets */}
-          <Route path="assets" element={<Assets />} />
-          <Route path="assets/create" element={<AssetCreate />} />
+          <Route path="assets" element={<AssetList />} />
+          <Route path="create-asset" element={<AssetCreate />} />
           <Route path="assets/:id" element={<AssetDetail />} />
           <Route path="assets/:id/edit" element={<AssetEdit />} />
+          <Route path="locations" element={<AssetLocations />} />
+
+          <Route path="departments" element={<Departments />} />
+          <Route path="designations" element={<Designations />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="subcategories" element={<Subcategories />} />
 
           <Route path="/maintenance" element={<MaintenanceLayout />}>
             {/* to make the "all" path as default on nav bar when clicking, we use index element,replace helps fix back button loop

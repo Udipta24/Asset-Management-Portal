@@ -16,7 +16,7 @@ async function generateUniqueSubcatCode(subCategoryName) {
 
   // Fetch existing codes
   const { rows } = await db.query(
-    `SELECT subcategory_code FROM sub_categories WHERE code LIKE $1`,
+    `SELECT subcategory_code FROM sub_categories WHERE subcategory_code LIKE $1`,
     [`${baseCode}%`]
   );
 
@@ -41,19 +41,14 @@ async function generateUniqueSubcatCode(subCategoryName) {
 // Create a new subcategory
 exports.addSubcategory = async (data) => {
   try {
-    const subCatCode = await generateUniqueSubcatCode(data.category_name);
+    const subCatCode = await generateUniqueSubcatCode(data.subcategory_name);
     const result = await db.query(
-      "INSERT INTO sub_categories (category_id, subcategory_name, description) VALUES ($1, $2, $3) RETURNING category_name, category_code",
-      [
-        data.category_id,
-        data.subcategory_name,
-        subCatCode,
-        data.description || "No description",
-      ]
+      "INSERT INTO sub_categories (category_id, subcategory_name, subcategory_code, description) VALUES ($1, $2, $3, $4) RETURNING *",
+      [data.category_id, data.subcategory_name, subCatCode, data.description]
     );
     return result.rows[0];
   } catch (error) {
-    throw err;
+    throw error;
   }
 };
 
@@ -61,7 +56,7 @@ exports.addSubcategory = async (data) => {
 exports.updateSubcategoryDescription = async (id, newDescription) => {
   try {
     const result = await db.query(
-      "UPDATE sub_categories SET description = $1 WHERE subcategory_id = $2 RETURNING subcategory_name, subcategory_code, description",
+      "UPDATE sub_categories SET description = $1 WHERE subcategory_id = $2 RETURNING *",
       [newDescription, id]
     );
     if (result.rows.length === 0) {
@@ -87,7 +82,7 @@ exports.deleteSubcategory = async (id) => {
       };
     }
     const deleteSql = await db.query(
-      "DELETE FROM sub_categories WHERE id = $1 RETURNING *",
+      "DELETE FROM sub_categories WHERE subcategory_id = $1 RETURNING *",
       [id]
     );
     return deleteSql.rows[0];
@@ -97,10 +92,11 @@ exports.deleteSubcategory = async (id) => {
 };
 
 // List all subcategories
-exports.listAllSubcategories = async () => {
+exports.listAllSubcategories = async (category_id) => {
   try {
     const result = await db.query(
-      "SELECT subcategory_id, subcategory_name, subcategory_code FROM sub_categories ORDER BY subcategory_name"
+      "SELECT * FROM sub_categories WHERE category_id = $1 ORDER BY subcategory_name",
+      [category_id]
     );
     return result.rows;
   } catch (error) {
@@ -124,11 +120,21 @@ exports.getByNameAndCategory = async (subcategory_name, category_id) => {
   }
 };
 
-exports.getSubcategoriesByCategory = async (category_id) => {
+exports.getSubcategoriesByCategory = async () => {
   try {
     const result = await db.query(
-      "SELECT * FROM sub_categories WHERE category_id = $1",
-      [category_id]
+      `SELECT
+        category_id,
+        JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'subcategory_id', subcategory_id,
+            'subcategory_name', subcategory_name,
+            'subcategory_code', subcategory_code,
+            'description', description
+          ) ORDER BY subcategory_name
+        ) AS subcategories
+      FROM sub_categories
+      GROUP BY category_id`
     );
     return result.rows;
   } catch (error) {

@@ -16,7 +16,7 @@ async function generateUniqueCatCode(categoryName) {
 
   // Fetch existing codes
   const { rows } = await db.query(
-    `SELECT category_code FROM asset_categories WHERE code LIKE $1`,
+    `SELECT category_code FROM asset_categories WHERE category_code LIKE $1`,
     [`${baseCode}%`]
   );
 
@@ -43,8 +43,8 @@ exports.addCategory = async (data) => {
   try {
     const catCode = await generateUniqueCatCode(data.category_name);
     const result = await db.query(
-      "INSERT INTO asset_categories (category_name, category_code, description) VALUES ($1, $2, $3) RETURNING category_name, category_code",
-      [data.category_name, catCode, data.description || "No description"]
+      "INSERT INTO asset_categories (category_name, category_code, description) VALUES ($1, $2, $3) RETURNING *",
+      [data.category_name, catCode, data.description]
     );
     return result.rows[0];
   } catch (error) {
@@ -56,7 +56,7 @@ exports.addCategory = async (data) => {
 exports.updateCategoryDescription = async (id, newDescription) => {
   try {
     const result = await db.query(
-      "UPDATE asset_categories SET description = $1 WHERE id = $2 RETURNING category_name, category_code, description",
+      "UPDATE asset_categories SET description = $1 WHERE category_id = $2 RETURNING *",
       [newDescription, id]
     );
     if (result.rows.length === 0) {
@@ -84,7 +84,7 @@ exports.deleteCategory = async (id) => {
     }
     // No assets
     const deleteSql = await db.query(
-      "DELETE FROM asset_categories WHERE id = $1 RETURNING *",
+      "DELETE FROM asset_categories WHERE category_id = $1 RETURNING *",
       [id]
     );
 
@@ -98,7 +98,7 @@ exports.deleteCategory = async (id) => {
 exports.listAllCategories = async () => {
   try {
     const result = await db.query(
-      "SELECT category_id, category_name, category_code FROM asset_categories ORDER BY category_name"
+      "SELECT * FROM asset_categories ORDER BY category_name"
     );
     return result.rows;
   } catch (error) {

@@ -3,13 +3,9 @@ const router = express.Router();
 
 const designationController = require("../controllers/designationController");
 
-// Create a new designation
-router.post("/", designationController.create);
-
-// Delete a designation by id
-router.delete("/:designation_id", designationController.delete);
-
-// List all designations
 router.get("/", designationController.listAll);
+router.post("/", designationController.create);
+router.patch("/:id", designationController.updateDesc);
+router.delete("/:id", designationController.delete);
 
 module.exports = router;

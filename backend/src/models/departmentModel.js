@@ -16,7 +16,7 @@ async function generateUniqueDeptCode(departmentName) {
 
   // Fetch existing codes
   const { rows } = await db.query(
-    `SELECT department_code FROM departments WHERE code LIKE $1`,
+    `SELECT department_code FROM departments WHERE department_code LIKE $1`,
     [`${baseCode}%`]
   );
 
@@ -37,30 +37,46 @@ async function generateUniqueDeptCode(departmentName) {
   }
   return `${baseCode}${maxSuffix + 1}`;
 }
-exports.createDepartment = async (department_name) => {
+exports.createDepartment = async (department_name, description) => {
   try {
     // Insert new department
-    const deptCode = generateUniqueDeptCode()
+    const deptCode = await generateUniqueDeptCode(department_name);
     const result = await db.query(
-      "INSERT INTO departments (department_name, department_code) VALUES ($1, $2) RETURNING department_id, department_name, department_code",
-      [department_name, deptCode]
+      "INSERT INTO departments (department_name, department_code, description) VALUES ($1, $2, $3) RETURNING *",
+      [department_name, deptCode, description]
     );
     return result.rows[0];
   } catch (err) {
     throw err;
   }
 };
+
+exports.updateDepartmentDescription = async (department_id, newDescription) => {
+  try {
+    const result = await db.query(
+      "UPDATE departments SET description = $1 WHERE department_id = $2 RETURNING *",
+      [newDescription, department_id]
+    );
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return result.rows[0];
+  } catch (error) {
+    throw error;
+  }
+};
+
 exports.deleteDepartment = async (department_id) => {
   try {
-    // Check for assets assigned to this department
-    const assetCheck = await db.query(
-      "SELECT COUNT(*) AS cnt FROM assets WHERE department_id = $1",
+    // Check for users assigned to this department
+    const userCheck = await db.query(
+      "SELECT COUNT(*) AS cnt FROM users_data WHERE department_id = $1",
       [department_id]
     );
-    if (assetCheck.rows[0].cnt > 0) {
-      // Cannot delete, assets exist
+    if (userCheck.rows[0].cnt > 0) {
+      // Cannot delete, users exist
       return {
-        message: "Can't delete the department as assets are assigned to it",
+        message: "Can't delete the department as users are present under it",
       };
     }
     // Delete the department
@@ -80,7 +96,7 @@ exports.deleteDepartment = async (department_id) => {
 exports.listAllDepartments = async () => {
   try {
     const { rows } = await db.query(
-      "SELECT department_id, department_name, department_code FROM departments ORDER BY department_name"
+      "SELECT * FROM departments ORDER BY department_name"
     );
     return rows;
   } catch (err) {
@@ -92,7 +108,7 @@ exports.listAllDepartments = async () => {
 exports.findByName = async (department_name) => {
   try {
     const { rows } = await db.query(
-      "SELECT department_id, department_name, department_code FROM departments WHERE LOWER(department_name) = LOWER($1) LIMIT 1",
+      "SELECT * FROM departments WHERE LOWER(department_name) = LOWER($1) LIMIT 1",
       [department_name]
     );
     return rows[0] || null;

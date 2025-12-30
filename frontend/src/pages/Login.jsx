@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import API from "../api/api";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { useReferenceData } from "../hooks/useReferenceData";
 //trim the username or else it will try to compare "jit   " with "jit" , one has gaps and another has no gaps
 
 export default function Login() {
@@ -11,14 +10,11 @@ export default function Login() {
   const nav = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const { fetchProtectedReferenceData } = useReferenceData();
-
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       await API.post("/auth/login", { email, password });
-      fetchProtectedReferenceData();
       nav("/");
     } catch (err) {
       Swal.fire({

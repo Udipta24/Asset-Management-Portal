@@ -1,5 +1,11 @@
 // internal modules
-const { getUserByEmail, getUserByPublicId, updateUserById, deleteUserById, promoteToAssetManager } = require("../models/userModel");
+const {
+  getUserByEmail,
+  getUserByPublicId,
+  updateUserById,
+  deleteUserById,
+  promoteToAssetManager,
+} = require("../models/userModel");
 
 // Verify current session - returns user info if logged in
 exports.me = async (req, res, next) => {
@@ -13,9 +19,9 @@ exports.me = async (req, res, next) => {
     res.json({
       user: {
         user_id: user.user_id,
-        full_name: user.full_name,
+        name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.role_name,
       },
     });
   } catch (err) {
@@ -39,7 +45,7 @@ exports.updateUser = async (req, res, next) => {
 
     res.json({
       message: "User updated successfully",
-      user: updatedUser
+      user: updatedUser,
     });
   } catch (err) {
     next(err);
@@ -52,8 +58,8 @@ exports.promoteToAssetManager = async (req, res, next) => {
 
     // Prevent self-promotion
     if (req.user.public_id === userId) {
-      return res.status(403).json({ 
-        message: "You cannot promote yourself to ASSET_MANAGER" 
+      return res.status(403).json({
+        message: "You cannot promote yourself to ASSET_MANAGER",
       });
     }
 
@@ -65,8 +71,8 @@ exports.promoteToAssetManager = async (req, res, next) => {
 
     // Check if user is already ASSET_MANAGER
     if (targetUser.role_name === "ASSET_MANAGER") {
-      return res.status(400).json({ 
-        message: "User is already an ASSET_MANAGER" 
+      return res.status(400).json({
+        message: "User is already an ASSET_MANAGER",
       });
     }
 

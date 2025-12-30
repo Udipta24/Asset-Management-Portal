@@ -1,29 +1,19 @@
 import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import TopActions from "../components/TopActions";
+import Topbar from "../components/Topbar";
 
 export default function MainLayout() {
-  const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      
-      {/* Sidebar */}
-      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-
-      {/* Main Area */}
-      <div className="flex-1 flex flex-col">
-
-        {/* Page-specific Top Bar */}
-        <TopActions pathname={location.pathname} />
-
-        {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+    <div className="h-screen grid grid-rows-[56px_1fr]">
+      <Topbar />
+      <div className="grid grid-cols-[auto_1fr] overflow-hidden">
+        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+        <main className="overflow-auto bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950 p-4">
           <Outlet />
         </main>
-
       </div>
     </div>
   );

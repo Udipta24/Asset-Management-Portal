@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import API from "../api/api";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
@@ -6,6 +6,8 @@ import UploadFiles from "../components/UploadFiles";
 import Swal from "sweetalert2";
 import { useReferenceData } from "../hooks/useReferenceData";
 import axios from "axios";
+import { FaLocationDot } from "react-icons/fa6";
+
 
 function MapClickHandler({ onPick }) {
   useMapEvents({
@@ -45,9 +47,12 @@ export default function AssetCreate() {
   const [images, setImages] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { categories, subcategories, loadingProtected } = useReferenceData();
   const nav = useNavigate();
-
+  const {fetchProtectedReferenceData} = useReferenceData();
+  useEffect(() => {
+    fetchProtectedReferenceData();
+  }, []);
+  const { categories, subcategories, /*vendors, */ loadingProtected } = useReferenceData();
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -186,8 +191,8 @@ export default function AssetCreate() {
             onChange={(e) => handleChange("subcategory", e.target.value)}
             required
           >
-            <option value="">Select Subcategory</option>
-            {subcategories.map((subCat) => (
+            <option value="">Select Subcategory (after selecting category)</option>
+            {form.category && subcategories[form.category].map((subCat) => (
               <option key={subCat.subcategory_id} value={subCat.subcategory_id}>
                 {subCat.subcategory_name}
               </option>
@@ -308,13 +313,12 @@ export default function AssetCreate() {
           </select>
         </div>
 
-        <button
-          type="button"
+        <div
           onClick={() => setShowMap(true)}
-          className="col-span-2 border border-blue-600 text-blue-600 p-2 rounded"
+          className="col-span-2 border border-blue-600 text-blue-600 p-2 rounded flex justify-center items-center"
         >
-          📍 Select Location on Map
-        </button>
+          <FaLocationDot size={22} /> <span className="ml-1">Select location on Map</span> 
+        </div>
         {location.latitude && location.longitude && (
           <div className="col-span-2 text-sm text-gray-600">
             <p>

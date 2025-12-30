@@ -10,7 +10,7 @@ export const ReferenceDataProvider = ({ children }) => {
 
   // Protected (auth needed)
   const [categories, setCategories] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
+  const [subcategories, setSubcategories] = useState({});
   // const [vendors, setVendors] = useState([]);
 
   const [loadingPublic, setLoadingPublic] = useState(true);
@@ -40,7 +40,7 @@ export const ReferenceDataProvider = ({ children }) => {
 
       const [catRes, subcatRes, vendorRes] = await Promise.all([
         API.get("/categories"),
-        API.get("/subcategories"),
+        API.get("/subcategories/by-category"),
         // API.get("/vendors"),
       ]);
       

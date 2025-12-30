@@ -33,13 +33,13 @@ exports.create = async (req, res, next) => {
     // Destructure assigned_to and description as optional (default to null if not provided)
     const {
       asset_name,
-      category,
-      subcategory,
+      category, // id
+      subcategory, // id
       serial_number,
       model_number,
       purchase_date,
       purchase_cost,
-      vendor,
+      vendor, // id
       status,
       location,
       assigned_to = "NOT ASSIGNED",
@@ -119,20 +119,18 @@ exports.create = async (req, res, next) => {
 exports.list = async (req, res, next) => {
   try {
     const filters = {
-      category: req.query.category,
-      subcategory: req.query.subcategory,
-      assigned_to: req.query.assigned_to,
-      purchase_date_from: req.query.purchase_date_from,
-      purchase_date_to: req.query.purchase_date_to,
-      vendor: req.query.vendor,
-      status: req.query.status,
-      model_number: req.query.model_number,
       search: req.query.search,
-      sort_by: req.query.sort_by,
-      sort_direction: req.query.sort_direction,
+      category: req.query.category, // id 
+      subcategory: req.query.subcategory, // id
+      vendor: req.query.vendor, // id array
+      status: req.query.status,
       warranty_expiry_status: req.query.warranty_expiry_status,
       warranty_expiry_from: req.query.warranty_expiry_from,
       warranty_expiry_to: req.query.warranty_expiry_to,
+      sort_by: req.query.sort_by,
+      sort_direction: req.query.sort_direction,
+      purchase_date_from: req.query.purchase_date_from,
+      purchase_date_to: req.query.purchase_date_to,
     };
 
     // ASSET_MANAGER and USER can see assets from their department AND unassigned assets
@@ -157,7 +155,9 @@ exports.getOne = async (req, res, next) => {
   try {
     const asset = await assetModel.getAssetById(req.params.id);
     if (!asset) return res.status(404).json({ error: "Asset not found" });
-
+    const public_id = asset.public_id;
+    const files = await assetModel.getFilesByAssetId(public_id);
+    if (!files) return res.status(404).json({ error: "Failed to fetch asset files" });
     // ASSET_MANAGER and USER can access assets from their department AND unassigned assets
     const userRole = req.user.role.toUpperCase();
     if (userRole === "ASSET_MANAGER" || userRole === "USER") {
@@ -173,8 +173,12 @@ exports.getOne = async (req, res, next) => {
         });
       }
     }
-
-    res.json(asset);
+    
+    // res.json(asset);
+    res.json({
+      asset,
+      files
+    });
   } catch (err) {
     next(err);
   }
@@ -254,6 +258,75 @@ exports.remove = async (req, res, next) => {
   }
 };
 
+
+exports.getAssetFile = async (req, res, next) => {
+  try {
+    const { fileId } = req.params;
+    const intent = req.query.intent || "view"; // view | download
+    const isDownload = intent === "download";
+    const userRole = req.user.role.toUpperCase();
+    // Get file metadata by fileId
+    const file = await assetModel.getFilesByFileId(fileId);
+    if (!file) {
+      return res.status(404).json({ error: "File not found" });
+    }
+    
+    // Role-based access control for file downloads
+    // ADMIN: Can download any file
+    // ASSET_MANAGER / USER: Can download files from assets in their department OR unassigned assets
+    if (userRole !== "ADMIN") {
+      const assetDepartmentId = await assetModel.getAssetDepartmentId(
+        file.asset_id
+      );
+      if (
+        assetDepartmentId !== null &&
+        assetDepartmentId !== req.user.department_id
+      ) {
+        return res.status(403).json({
+          error:
+          "Access denied: Cannot download files from assets outside your department",
+        });
+      }
+    }
+    
+    // Retrieve the file from Supabase storage
+    const { data, error } = await supabase.storage
+    .from(file.bucket)
+    .download(file.file_path);
+    
+    if (error || !data) {
+      return res.status(500).json({ error: "Failed to download file." });
+    }
+    
+    // Set headers
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    
+    // Content headers
+    res.setHeader("Content-Type", file.mime_type);
+    res.setHeader(
+      "Content-Disposition",
+      isDownload
+      ? `attachment; filename="${file.original_name}"`
+      : "inline"
+    );
+    
+    // Pipe the readable stream or buffer to the response
+    if (typeof data.pipe === "function") {
+      data.pipe(res);
+    } else {
+      // If Supabase returns a Blob or Buffer
+      res.end(Buffer.from(await data.arrayBuffer()));
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.deleteAssetFile = async (req, res, next) => {
   try {
     const { fileId } = req.params;
@@ -272,89 +345,6 @@ exports.deleteAssetFile = async (req, res, next) => {
     await assetModel.deleteAssetFileMeta(fileId);
 
     res.json({ message: "File deleted successfully" });
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.getAssetFile = async (req, res, next) => {
-  try {
-    const { fileId } = req.params;
-    const userRole = req.user.role.toUpperCase();
-    const purpose = req.body.intent;
-
-    // Get file metadata by fileId
-    const file = await assetModel.getFilesByFileId(fileId);
-    if (!file) {
-      return res.status(404).json({ error: "File not found" });
-    }
-
-    // Role-based access control for file downloads
-    // ADMIN: Can download any file
-    // ASSET_MANAGER / USER: Can download files from assets in their department OR unassigned assets
-    if (userRole !== "ADMIN") {
-      const assetDepartmentId = await assetModel.getAssetDepartmentId(
-        file.asset_id
-      );
-      if (
-        assetDepartmentId !== null &&
-        assetDepartmentId !== req.user.department_id
-      ) {
-        return res.status(403).json({
-          error:
-            "Access denied: Cannot download files from assets outside your department",
-        });
-      }
-    }
-
-    // Retrieve the file from Supabase storage
-    const { data, error } = await supabase.storage
-      .from(file.bucket)
-      .download(file.file_path);
-
-    if (error || !data) {
-      return res.status(500).json({ error: "Failed to download file." });
-    }
-
-    // Set headers for download
-    if (purpose === "download") {
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${file.original_name}"`
-      );
-    } else if (purpose === "view") {
-      res.setHeader("Content-Disposition", "inline");
-    }
-    res.setHeader("Content-Type", file.mime_type);
-
-    // Pipe the readable stream or buffer to the response
-    if (typeof data.pipe === "function") {
-      data.pipe(res);
-    } else {
-      // If Supabase returns a Blob or Buffer
-      res.end(Buffer.from(await data.arrayBuffer()));
-    }
-  } catch (err) {
-    next(err);
-  }
-};
-
-exports.getAssetImagePreview = async (req, res, next) => {
-  try {
-    const { fileId } = req.params;
-
-    const file = await assetModel.getFilesByFileId(fileId);
-    if (!file || file.file_type !== "image") {
-      return res.status(404).json({ error: "Image not found" });
-    }
-
-    const { data, error } = await supabase.storage
-      .from(file.bucket)
-      .createSignedUrl(file.file_path, 60); // 60 seconds
-
-    if (error) throw error;
-
-    res.json({ previewUrl: data.signedUrl });
   } catch (err) {
     next(err);
   }

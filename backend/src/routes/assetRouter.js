@@ -31,24 +31,14 @@ const upload = multer({
 router.get("/", authenticate, assetController.list);
 // get one asset (admin and asset_manager depart. restrictions checked in controller)
 router.get("/:id", authenticate, assetController.getOne);
-// get image preview
+
+// get file view or download (all authenticated users, role-based restrictions handled in controller)
 router.get(
-  "/files/:fileId/image-preview",
-  authenticate,
-  assetController.getAssetImagePreview
-);
-// get file view (all authenticated users, role-based restrictions handled in controller)
-router.get(
-  "/files/:fileId/view",
+  "/files/:fileId/",
   authenticate,
   assetController.getAssetFile
 );
-// download asset file (all authenticated users, role-based restrictions handled in controller)
-router.get(
-  "/assets/files/:fileId/download",
-  authenticate,
-  assetController.getAssetFile
-);
+
 // create asset (admin or asset_manager)
 router.post(
   "/",
@@ -80,7 +70,7 @@ router.delete(
 );
 // delete asset file (admin and asset_manager, department restrictions handled in controller)
 router.delete(
-  "/assets/files/:fileId",
+  "/files/:fileId",
   authenticate,
   authorize("admin", "asset_manager"),
   assetController.deleteAssetFile

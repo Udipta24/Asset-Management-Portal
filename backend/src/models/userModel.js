@@ -80,7 +80,9 @@ exports.getUserByEmail = async (email) => {
                 u.email,
                 u.department_id,
                 d.department_name,
+                u.designation_id,
                 g.designation_name,
+                ur.role_id,
                 r.role_name,
                 u.password_hash
              FROM users_data u
@@ -108,7 +110,9 @@ exports.getUserById = async (user_id) => {
                 u.email,
                 u.department_id,
                 d.department_name,
+                u.designation_id,
                 g.designation_name,
+                ur.role_id,
                 r.role_name,
                 u.password_hash
              FROM users_data u
@@ -136,7 +140,9 @@ exports.getUserByPublicId = async (public_id) => {
                 u.email,
                 u.department_id,
                 d.department_name,
+                u.designation_id,
                 g.designation_name,
+                ur.role_id,
                 r.role_name,
                 u.password_hash
              FROM users_data u

@@ -16,7 +16,7 @@ async function generateUniqueDesgCode(designationName) {
 
   // Fetch existing codes
   const { rows } = await db.query(
-    `SELECT designation_code FROM designatios WHERE code LIKE $1`,
+    `SELECT designation_code FROM designations WHERE designation_code LIKE $1`,
     [`${baseCode}%`]
   );
 
@@ -37,30 +37,47 @@ async function generateUniqueDesgCode(designationName) {
   }
   return `${baseCode}${maxSuffix + 1}`;
 }
-exports.createDesignation = async (designation_name) => {
+exports.createDesignation = async (designation_name, description) => {
   try {
     // Insert new department
-    const desgCode = generateUniqueDesgCode();
+    const desgCode = await generateUniqueDesgCode(designation_name);
     const result = await db.query(
-      "INSERT INTO designations (designation_name, designation_code) VALUES ($1, $2) RETURNING designation_id, designation_name, designation_code",
-      [designation_name, desgCode]
+      "INSERT INTO designations (designation_name, designation_code, description) VALUES ($1, $2, $3) RETURNING *",
+      [designation_name, desgCode, description]
     );
     return result.rows[0];
   } catch (err) {
     throw err;
   }
 };
+exports.updateDesignationDescription = async (
+  designation_id,
+  newDescription
+) => {
+  try {
+    const result = await db.query(
+      "UPDATE designations SET description = $1 WHERE designation_id = $2 RETURNING *",
+      [newDescription, designation_id]
+    );
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return result.rows[0];
+  } catch (error) {
+    throw error;
+  }
+};
 exports.deleteDesignation = async (designation_id) => {
   try {
-    // Check for assets assigned to this department
-    const assetCheck = await db.query(
-      "SELECT COUNT(*) AS cnt FROM assets WHERE designation_id = $1",
+    // Check for users assigned to this department
+    const userCheck = await db.query(
+      "SELECT COUNT(*) AS cnt FROM users_data WHERE designation_id = $1",
       [designation_id]
     );
-    if (assetCheck.rows[0].cnt > 0) {
-      // Cannot delete, assets exist
+    if (userCheck.rows[0].cnt > 0) {
+      // Cannot delete, users exist
       return {
-        message: "Can't delete the designation as assets are assigned to it",
+        message: "Can't delete the designation as users are present under it",
       };
     }
     // Delete the department
@@ -80,7 +97,7 @@ exports.deleteDesignation = async (designation_id) => {
 exports.listAllDesignations = async () => {
   try {
     const { rows } = await db.query(
-      "SELECT designation_id, designation_name, designation_code FROM designations ORDER BY designation_name"
+      "SELECT * FROM designations ORDER BY designation_name"
     );
     return rows;
   } catch (err) {
@@ -92,7 +109,7 @@ exports.listAllDesignations = async () => {
 exports.findByName = async (designation_name) => {
   try {
     const { rows } = await db.query(
-      "SELECT designation_id, designation_name, designation_code FROM designations WHERE LOWER(designation_name) = LOWER($1) LIMIT 1",
+      "SELECT * FROM designations WHERE LOWER(designation_name) = LOWER($1) LIMIT 1",
       [designation_name]
     );
     return rows[0] || null;
