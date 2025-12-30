@@ -1,7 +1,17 @@
+// models/vendorModel.js
 const db = require("../config/db");
 
+/**
+ * Create Vendor
+ */
 exports.createVendor = async (data) => {
-  const { vendor_name, contact_person, phone, email, address } = data;
+  const {
+    vendor_name,
+    contact_person,
+    phone,
+    email,
+    address,
+  } = data;
 
   const result = await db.query(
     `
@@ -17,6 +27,9 @@ exports.createVendor = async (data) => {
   return result.rows[0];
 };
 
+/**
+ * Get all vendors
+ */
 exports.getAllVendors = async () => {
   const result = await db.query(
     `
@@ -28,13 +41,20 @@ exports.getAllVendors = async () => {
   return result.rows;
 };
 
+/**
+ * Get vendor by ID
+ */
 exports.getVendorById = async (vendor_id) => {
-  const result = await db.query(`SELECT * FROM vendors WHERE vendor_id = $1`, [
-    vendor_id,
-  ]);
+  const result = await db.query(
+    `SELECT * FROM vendors WHERE vendor_id = $1`,
+    [vendor_id]
+  );
   return result.rows[0];
 };
 
+/**
+ * Update vendor
+ */
 exports.updateVendor = async (vendor_id, fields) => {
   const allowedFields = [
     "vendor_name",
@@ -73,6 +93,9 @@ exports.updateVendor = async (vendor_id, fields) => {
   return result.rows[0];
 };
 
+/**
+ * Delete vendor
+ */
 exports.deleteVendor = async (vendor_id) => {
   const result = await db.query(
     `DELETE FROM vendors WHERE vendor_id = $1 RETURNING *`,

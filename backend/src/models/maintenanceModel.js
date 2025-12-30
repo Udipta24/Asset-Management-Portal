@@ -1,5 +1,8 @@
 const db = require("../config/db");
 
+/**
+ * Create maintenance record
+ */
 exports.createMaintenance = async (data) => {
   const {
     asset_id,
@@ -39,6 +42,9 @@ exports.createMaintenance = async (data) => {
   return result.rows[0];
 };
 
+/**
+ * Get all maintenance records
+ */
 exports.getAllMaintenance = async () => {
   const result = await db.query(`
     SELECT 
@@ -54,6 +60,9 @@ exports.getAllMaintenance = async () => {
   return result.rows;
 };
 
+/**
+ * Get maintenance by ID
+ */
 exports.getMaintenanceById = async (maintenance_id) => {
   const result = await db.query(
     `
@@ -72,6 +81,9 @@ exports.getMaintenanceById = async (maintenance_id) => {
   return result.rows[0];
 };
 
+/**
+ * Update maintenance record
+ */
 exports.updateMaintenance = async (maintenance_id, fields) => {
   const allowed = [
     "maintenance_type",
@@ -110,6 +122,9 @@ exports.updateMaintenance = async (maintenance_id, fields) => {
   return result.rows[0];
 };
 
+/**
+ * Delete maintenance record
+ */
 exports.deleteMaintenance = async (maintenance_id) => {
   const result = await db.query(
     `DELETE FROM maintenance_records WHERE maintenance_id = $1 RETURNING *`,
