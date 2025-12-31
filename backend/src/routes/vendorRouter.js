@@ -13,14 +13,14 @@ router.get("/:vendorId", authenticate, vendorController.getVendorById);
 router.post(
   "/",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   vendorController.createVendor
 );
 
 router.put(
   "/:vendorId",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   vendorController.updateVendor
 );
 

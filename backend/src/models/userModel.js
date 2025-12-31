@@ -35,8 +35,8 @@ exports.createUser = async (
   email,
   passwordHash,
   phone,
+  department_id,
   designation_id,
-  department_id
 ) => {
   // insert the user into the database
   const department_code = await getIdByName(

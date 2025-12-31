@@ -43,7 +43,7 @@ router.get(
 router.post(
   "/",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   upload.fields([
     { name: "images", maxCount: 5 },
     { name: "documents", maxCount: 5 },
@@ -54,7 +54,7 @@ router.post(
 router.patch(
   "/:id",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   upload.fields([
     { name: "images", maxCount: 5 },
     { name: "documents", maxCount: 5 },
@@ -65,14 +65,14 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   assetController.remove
 );
 // delete asset file (admin and asset_manager, department restrictions handled in controller)
 router.delete(
   "/files/:fileId",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   assetController.deleteAssetFile
 );
 

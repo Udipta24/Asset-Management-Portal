@@ -10,6 +10,7 @@ const { authorize } = require("../middlewares/rbac");
  */
 router.get("/", authenticate, maintenanceController.getAllMaintenance);
 router.get("/:maintenanceId", authenticate, maintenanceController.getMaintenanceById);
+router.get("/:assetId", authenticate, maintenanceController.getMaintenanceByAssetId);
 
 /**
  * Create & update — ADMIN & ASSET_MANAGER
@@ -17,14 +18,14 @@ router.get("/:maintenanceId", authenticate, maintenanceController.getMaintenance
 router.post(
   "/",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   maintenanceController.createMaintenance
 );
 
 router.put(
   "/:maintenanceId",
   authenticate,
-  authorize("admin", "asset_manager"),
+  authorize("admin", "asset manager"),
   maintenanceController.updateMaintenance
 );
 

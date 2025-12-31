@@ -2,10 +2,9 @@ const {
     createMaintenance,
     getAllMaintenance,
     getMaintenanceById,
+    getMaintenanceByAssetId,
     updateMaintenance,
     deleteMaintenance,
-    addAttachment,
-    getAttachments,
   } = require("../models/maintenanceModel");
   
   /**
@@ -15,7 +14,7 @@ const {
     try {
       const record = await createMaintenance({
         ...req.body,
-        performed_by: req.user.user_id,
+        performed_by: req.user.public_id,
       });
   
       res.status(201).json({
@@ -45,6 +44,23 @@ const {
   exports.getMaintenanceById = async (req, res, next) => {
     try {
       const record = await getMaintenanceById(req.params.maintenanceId);
+  
+      if (!record) {
+        return res.status(404).json({ message: "Maintenance not found" });
+      }
+  
+      res.json({ record });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * Get maintenance by Asset ID
+   */
+  exports.getMaintenanceByAssetId = async (req, res, next) => {
+    try {
+      const record = await getMaintenanceByAssetId(req.params.assetId);
   
       if (!record) {
         return res.status(404).json({ message: "Maintenance not found" });

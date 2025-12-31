@@ -52,8 +52,8 @@ exports.getAllMaintenance = async () => {
       a.asset_name,
       u.name AS performed_by_name
     FROM maintenance_records m
-    LEFT JOIN assets a ON m.asset_id = a.asset_id
-    LEFT JOIN users u ON m.performed_by = u.user_id
+    LEFT JOIN assets a ON m.asset_id = a.public_id
+    LEFT JOIN users u ON m.performed_by = u.public_id
     ORDER BY m.maintenance_date DESC
   `);
 
@@ -71,11 +71,32 @@ exports.getMaintenanceById = async (maintenance_id) => {
       a.asset_name,
       u.name AS performed_by_name
     FROM maintenance_records m
-    LEFT JOIN assets a ON m.asset_id = a.asset_id
-    LEFT JOIN users u ON m.performed_by = u.user_id
+    LEFT JOIN assets a ON m.asset_id = a.public_id
+    LEFT JOIN users u ON m.performed_by = u.public_id
     WHERE m.maintenance_id = $1
     `,
     [maintenance_id]
+  );
+
+  return result.rows[0];
+};
+
+/**
+ * Get maintenance by Asset ID
+ */
+exports.getMaintenanceByAssetId = async (asset_id) => {
+  const result = await db.query(
+    `
+    SELECT 
+      m.*,
+      a.asset_name,
+      u.name AS performed_by_name
+    FROM maintenance_records m
+    LEFT JOIN assets a ON m.asset_id = a.public_id
+    LEFT JOIN users u ON m.performed_by = u.public_id
+    WHERE m.asset_id = $1
+    `,
+    [asset_id]
   );
 
   return result.rows[0];

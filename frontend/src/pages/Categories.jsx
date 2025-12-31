@@ -51,9 +51,15 @@ export default function Categories() {
         <table className="w-full border border-orange-400 rounded">
           <thead className="bg-gradient-to-br from-orange-300 via-orange-200 to-orange-300 text-orange-800">
             <tr>
-              <th className="border border-orange-400 px-4 py-2 text-left">Category Name</th>
-              <th className="border border-orange-400 px-4 py-2 text-left">Category Code</th>
-              <th className="border border-orange-400 px-4 py-2 text-left">Description</th>
+              <th className="border border-orange-400 px-4 py-2 text-left">
+                Category Name
+              </th>
+              <th className="border border-orange-400 px-4 py-2 text-left">
+                Category Code
+              </th>
+              <th className="border border-orange-400 px-4 py-2 text-left">
+                Description
+              </th>
               <th className="border border-orange-400 px-4 py-2 text-center"></th>
               <th className="border border-orange-400 px-4 py-2 text-center"></th>
             </tr>
@@ -62,9 +68,13 @@ export default function Categories() {
           <tbody>
             {categories.map((cat) => (
               <tr key={cat.category_id} className="hover:bg-orange-50">
-                <td className="border border-orange-200 px-4 py-2">{cat.category_name}</td>
+                <td className="border border-orange-200 px-4 py-2">
+                  {cat.category_name}
+                </td>
 
-                <td className="border border-orange-200 px-4 py-2">{cat.category_code}</td>
+                <td className="border border-orange-200 px-4 py-2">
+                  {cat.category_code}
+                </td>
 
                 <td className="border border-orange-200 px-4 py-2">
                   {editingId === cat.category_id ? (
