@@ -192,128 +192,158 @@ export default function AssetEdit() {
     }
   };
   return (
-    <div className="max-w-full bg-white p-6 rounded shadow">
-      <h2 className="text-2xl mb-4 font-bold text-orange-600">Create Asset</h2>
+    <div className="max-w-full bg-white dark:bg-slate-900 p-6 rounded shadow">
+      <h2 className="text-2xl mb-4 font-bold text-orange-600 dark:text-orange-400">
+        Edit Asset Details
+      </h2>
 
       <form
         onSubmit={submit}
         className="grid grid-cols-1 md:grid-cols-2 gap-3 space-y-3"
       >
         <div className="col-span-2 flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Asset name:
           </label>
           <input
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Asset Name"
             value={asset.asset_name}
-            required
             disabled
           />
         </div>
 
         <div className="col-span-2 flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Category:
           </label>
           <input
-            className="border p-2 rounded"
-            placeholder="Asset Name"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             value={asset.category_name}
-            required
+            disabled
           />
         </div>
 
         <div className="col-span-2 flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Subcategory:
           </label>
           <input
-            className="border p-2 rounded"
-            placeholder="Asset Name"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             value={asset.subcategory_name}
-            required
+            disabled
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Model number:
           </label>
           <input
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Model Number"
             value={asset.model_number}
+            disabled
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Serial number:
           </label>
           <input
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Serial Number"
             value={asset.serial_number}
+            disabled
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Purchase date:
           </label>
           <input
             type="date"
-            className={`border p-2 rounded ${
-              form.vendor === "" ? "text-gray-400" : "text-black"
-            } focus:ring focus:ring-blue-200`}
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             value={asset.purchase_date}
+            disabled
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Purchase cost:
           </label>
           <input
             type="number"
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Purchase Cost"
             value={asset.purchase_cost}
+            disabled
           />
         </div>
 
         {/* <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Vendor:
           </label>
           <input
-            className="border p-2 rounded"
-            placeholder="Vendor"
+className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"            placeholder="Vendor"
             value={asset.vendor_name}
+            disabled
           />
         </div> */}
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Warranty expiry:
           </label>
           <input
             type="date"
-            className={`border p-2 rounded ${
-              form.warranty_expiry === "" ? "text-gray-400" : "text-black"
-            } focus:ring focus:ring-blue-200`}
+            className={`border p-2 rounded bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700 ${
+               form.warranty_expiry === "" ? "text-gray-400" : "text-black"
+             } focus:ring focus:ring-blue-200`}
             value={form.warranty_expiry}
             onChange={(e) => handleChange("warranty_expiry", e.target.value)}
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Assigned User ID:
           </label>
           <input
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Assigned User ID"
             value={form.assigned_to}
             onChange={(e) => handleChange("assigned_to", e.target.value)}
@@ -321,11 +351,14 @@ export default function AssetEdit() {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Asset status:
           </label>
           <select
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             value={form.status}
             onChange={(e) => handleChange("status", e.target.value)}
           >
@@ -337,13 +370,13 @@ export default function AssetEdit() {
 
         <div
           onClick={() => setShowMap(true)}
-          className="col-span-2 border border-blue-600 text-blue-600 p-2 rounded flex justify-center items-center"
+          className="md:col-span-2 border border-blue-600 text-blue-600 bg-white dark:bg-slate-800 p-2 rounded flex justify-center items-center"
         >
           <FaLocationDot size={22} />{" "}
           <span className="ml-1">Select location on Map</span>
         </div>
         {location.latitude && location.longitude && (
-          <div className="col-span-2 text-sm text-gray-600">
+          <div className="md:col-span-2 text-sm text-slate-600">
             <p>
               Selected: {location.latitude.toFixed(5)},{" "}
               {location.longitude.toFixed(5)}
@@ -352,7 +385,7 @@ export default function AssetEdit() {
           </div>
         )}
         {showMap && (
-          <div className="col-span-2">
+          <div className="md:col-span-2">
             <MapContainer
               center={[23.8315, 91.2868]}
               zoom={12}
@@ -379,15 +412,23 @@ export default function AssetEdit() {
         )}
 
         <textarea
-          className="border p-2 rounded col-span-2"
+          className="border p-2 rounded md:col-span-2 bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
           placeholder="Description"
           value={form.description}
           onChange={(e) => handleChange("description", e.target.value)}
         />
 
         {imageFiles.length > 0 && (
-          <div>
-            <h2 className="text-lg font-medium mb-2">Asset Images</h2>
+          <div
+            className="border p-2 rounded md:col-span-2 bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
+          >
+            <h2 className="text-lg font-medium mb-2 text-black dark:text-white">
+              Asset Images
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {imageFiles.map((img) => (
                 <div
@@ -398,16 +439,21 @@ export default function AssetEdit() {
                   <img
                     src={imageUrls[img.file_id]}
                     alt={img.original_name}
-                    className="h-40 w-full object-cover"
+                    className="h-40 w-40 object-cover"
                   />
                   <div className="flex justify-between items-center p-2 text-xs">
-                    <span className="truncate">{img.original_name}</span>
+                    <span className="truncate text-black dark:text-white">
+                      {img.original_name}
+                    </span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteFile(img.file_id);
                       }}
-                      className="text-red-600"
+                      className=" text-red-600
+      hover:bg-red-100
+      dark:text-red-400 dark:hover:bg-red-500/10
+      transition"
                     >
                       <ImBin />
                     </button>
@@ -418,8 +464,14 @@ export default function AssetEdit() {
           </div>
         )}
         {docFiles.length > 0 && (
-          <div>
-            <h2 className="text-lg font-medium mb-2">Documents</h2>
+          <div
+            className="border p-2 rounded md:col-span-2 bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
+          >
+            <h2 className="text-lg font-medium mb-2 text-black dark:text-white">
+              Documents
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {docFiles.map((doc) => (
                 <div
@@ -428,7 +480,7 @@ export default function AssetEdit() {
                   onClick={() => previewFile(doc.file_id)}
                 >
                   <FiFileText size={32} className="text-red-600" />
-                  <span className="text-xs text-center break-all">
+                  <span className="text-xs text-center break-all text-black dark:text-white">
                     {doc.original_name}
                   </span>
                   <button
@@ -436,7 +488,10 @@ export default function AssetEdit() {
                       e.stopPropagation();
                       deleteFile(doc.file_id);
                     }}
-                    className="text-xs flex items-center gap-1 text-red-600"
+                    className="text-xs flex items-center gap-1  text-red-600
+      hover:bg-red-100
+      dark:text-red-400 dark:hover:bg-red-500/10
+      transition"
                   >
                     <Imbin /> Delete
                   </button>

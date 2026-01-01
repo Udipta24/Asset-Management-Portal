@@ -52,7 +52,7 @@ exports.createUser = async (
       `INSERT INTO users_data (name, email, password_hash, department_id, designation_id, phone)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING user_id, name, email`,
-      [name, email, passwordHash, department_id, designation_id, phone]
+      [name, email, passwordHash, Number(department_id), Number(designation_id), phone]
     );
 
     const newUser = result.rows[0];
@@ -184,12 +184,12 @@ exports.getAllUsers = async ({ department_id, designation_id }) => {
 
   if (department_id) {
     conditions.push(`u.department_id = $${idx++}`);
-    values.push(department_id);
+    values.push(Number(department_id));
   }
 
   if (designation_id) {
     conditions.push(`u.designation_id = $${idx++}`);
-    values.push(designation_id);
+    values.push(Number(designation_id));
   }
 
   const whereClause =

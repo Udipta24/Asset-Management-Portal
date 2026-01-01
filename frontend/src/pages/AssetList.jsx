@@ -13,9 +13,9 @@ export default function AssetsList() {
   // Filters state
   const [filters, setFilters] = useState({
     search: "",
-    category: "",
-    subcategory: "",
-    vendor: "",
+    category: null,
+    subcategory: null,
+    vendor: null,
     status: "",
     warranty_expiry_status: "",
     warranty_expiry_from: "",
@@ -35,7 +35,12 @@ export default function AssetsList() {
   //   Networking: ["Router", "Switch"],
   // };
   // const vendors = ["Dell", "HP", "Lenovo", "Cisco"];
-  const {categories, subcategories, vendors, loadingProtected} = useReferenceData();
+  const { fetchProtectedReferenceData } = useReferenceData();
+  useEffect(() => {
+    fetchProtectedReferenceData();
+  }, []);
+  const { categories, subcategories, /*vendors, */ loadingProtected } =
+    useReferenceData();
 
   const fetchAssets = async () => {
     setLoading(true);
@@ -62,13 +67,13 @@ export default function AssetsList() {
   const getStatusStyles = (status) => {
     switch (status?.toLowerCase()) {
       case "active":
-        return "text-green-700 border-green-400 bg-green-50";
+        return "text-green-600 border-green-400 bg-green-100 dark:bg-green-500/10 dark:text-green-400";
+
       case "inactive":
-        return "text-red-700 border-red-400 bg-red-50";
-      case "maintenance":
-        return "text-yellow-700 border-yellow-400 bg-yellow-50";
-      default:
-        return "text-gray-700 border-gray-400 bg-gray-50";
+        return "text-red-600 border-red-400 bg-red-100 dark:bg-red-500/10 dark:text-red-400";
+
+      case "in-repair":
+        return "text-amber-600 border-amber-400 bg-amber-100 dark:bg-amber-500/10 dark:text-amber-400";
     }
   };
 
@@ -81,13 +86,23 @@ export default function AssetsList() {
   }
 
   return (
-    <div className="max-w-full bg-white p-6 rounded shadow space-y-4">
+    <div
+      className="max-w-full p-6 rounded-2xl space-y-4
+  bg-white dark:bg-slate-900
+  border border-slate-200 dark:border-white/10
+  shadow-sm"
+    >
       {/* Top bar */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Assets</h1>
+        <h1 className="text-2xl font-semibold text-slate-800 dark:text-slate-100">
+          Assets
+        </h1>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 border px-4 py-2 rounded hover:bg-gray-100"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border font-medium
+      text-slate-700 border-slate-300 hover:bg-slate-100
+      dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800
+      transition"
         >
           <FiFilter /> Filters
         </button>
@@ -95,16 +110,22 @@ export default function AssetsList() {
       {/* Search + Sort */}
       <div className="flex gap-4 items-center">
         <div className="relative flex-1">
-          <FiSearch className="absolute left-3 top-3 text-gray-400" />
+          <FiSearch className="absolute left-3 top-3 text-slate-400" />
           <input
-            className="w-full pl-10 p-2 border rounded"
+            className="w-full pl-10 p-2 rounded-xl outline-none
+        bg-slate-50 border border-slate-300
+        focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+        dark:bg-slate-800 dark:border-white/10
+        dark:text-slate-200 dark:focus:border-cyan-400 dark:focus:ring-cyan-400"
             placeholder="Search by asset name, serial, model or assigned user ID"
             value={filters.search}
             onChange={(e) => handleChange("search", e.target.value)}
           />
         </div>
         <select
-          className="border p-2 rounded"
+          className="p-2 rounded-xl border
+      bg-white text-slate-700 border-slate-300
+      dark:bg-slate-800 dark:text-slate-200 dark:border-white/10"
           value={filters.sort_by}
           onChange={(e) => handleChange("sort_by", e.target.value)}
         >
@@ -116,7 +137,10 @@ export default function AssetsList() {
         </select>
 
         <button
-          className="border p-2 rounded"
+          className="p-2 rounded-xl border
+    text-slate-600 hover:bg-slate-100
+    dark:text-slate-300 dark:border-white/10 dark:hover:bg-slate-800
+    transition"
           onClick={() =>
             handleChange(
               "sort_direction",
@@ -133,107 +157,212 @@ export default function AssetsList() {
       </div>
       {/* Filters panel */}
       {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-4 rounded bg-orange-50">
+        <div
+          className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 rounded-2xl
+  bg-slate-50 border border-slate-200
+  dark:bg-slate-800/60 dark:border-white/10"
+        >
           {/* Category */}
-          <div className="border rounded p-2">
-            <label className="font-medium">Category</label>
+          <div
+            className="p-4 rounded-xl border space-y-2
+  bg-white border-slate-200
+  dark:bg-slate-900 dark:border-white/10"
+          >
+            <label className="font-semibold text-slate-700 dark:text-slate-200">
+              Category
+            </label>
             {categories.map((cat) => (
-              <div key={cat} className="flex items-center gap-2">
+              <label
+                key={cat.category_id}
+                className={`
+                  flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition
+                  ${
+                    filters.category === cat.category_id
+                      ? "bg-blue-100 text-blue-700 dark:bg-cyan-500/10 dark:text-cyan-400"
+                      : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                  }
+                `}
+              >
                 <input
                   type="radio"
-                  name="category"
-                  checked={filters.category === cat}
-                  onChange={() => handleChange("category", cat)}
+                  checked={filters.category === cat.category_id}
+                  onChange={() => handleChange("category", cat.category_id)}
                 />
-                <span>{cat}</span>
-              </div>
+                <span className="text-sm">{cat.category_name}</span>
+              </label>
             ))}
           </div>
 
           {/* Subcategory */}
-          <div className="border rounded p-2">
-            <label className="font-medium">Subcategory</label>
+          <div
+            className="p-4 rounded-xl border space-y-2
+  bg-white border-slate-200
+  dark:bg-slate-900 dark:border-white/10"
+          >
+            <label className="font-semibold text-slate-700 dark:text-slate-200">
+              Subcategory
+            </label>
             {!filters.category && (
-              <span className="text-sm block"> (Select Category first)</span>
+              <span className="text-sm block text-slate-700 dark:text-slate-200">
+                {" "}
+                (Select Category first)
+              </span>
             )}
             {(subcategories[filters.category] || []).map((sub) => (
-              <div key={sub} className="flex items-center gap-2">
+              <label
+                key={sub.subcategory_id}
+                className={`
+                  flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition
+                  ${
+                    filters.subcategory === sub.subcategory_id
+                      ? "bg-blue-100 text-blue-700 dark:bg-cyan-500/10 dark:text-cyan-400"
+                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 "
+                  }
+                `}
+              >
                 <input
                   type="radio"
-                  name="subcategory"
-                  checked={filters.subcategory === sub}
-                  onChange={() => handleChange("subcategory", sub)}
+                  checked={filters.subcategory === sub.subcategory_id}
+                  onChange={() =>
+                    handleChange("subcategory", sub.subcategory_id)
+                  }
                 />
-                <span>{sub}</span>
-              </div>
+                <span className="text-sm">{sub.subcategory_name}</span>
+              </label>
             ))}
           </div>
 
           {/* Vendor */}
-          <div className="border rounded p-2">
-            <label className="font-medium">Vendor</label>
-            {vendors.map((v) => (
-              <div key={v} className="flex items-center gap-2">
+          {/* <div className="p-4 rounded-xl border space-y-2
+  bg-white border-slate-200
+  dark:bg-slate-900 dark:border-white/10">
+            <label className="font-semibold text-slate-700 dark:text-slate-200">Vendor</label>
+            {vendors.map((vendor) => (
+              <label
+                key={vendor.vendor_id}
+                className={`
+                  flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition
+                  ${
+                    filters.vendor === vendor.vendor_id
+                      ? "bg-blue-100 text-blue-700 dark:bg-cyan-500/10 dark:text-cyan-400"
+                      : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                  }
+                `}
+              >
                 <input
                   type="radio"
-                  checked={filters.vendor === v}
-                  onChange={() => handleChange("vendor", v)}
+                  checked={filters.vendor === vendor.vendor_id}
+                  onChange={() => handleChange("vendor", vendor.vendor_id)}
                 />
-                <span>{v}</span>
-              </div>
+                <span className="text-sm">{vendor.vendor_name}</span>
+              </label>
             ))}
-          </div>
+          </div> */}
 
           {/* Warranty */}
-          <div className="border rounded p-2">
-            <label className="font-medium">Warranty Status</label>
+          <div
+            className="p-4 rounded-xl border space-y-2
+  bg-white border-slate-200
+  dark:bg-slate-900 dark:border-white/10"
+          >
+            <label className="font-semibold text-slate-700 dark:text-slate-200">
+              Warranty Status
+            </label>
             {["expired", "expiring soon", "valid"].map((w) => (
-              <div key={w} className="flex items-center gap-2">
+              <label
+                key={w}
+                className={`
+                  flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition
+                  ${
+                    filters.warranty_expiry_status === w
+                      ? "bg-blue-100 text-blue-700 dark:bg-cyan-500/10 dark:text-cyan-400"
+                      : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                  }
+                `}
+              >
                 <input
                   type="radio"
-                  name="warranty"
                   checked={filters.warranty_expiry_status === w}
                   onChange={() => handleChange("warranty_expiry_status", w)}
                 />
                 <span>{w}</span>
-              </div>
+              </label>
             ))}
           </div>
 
           {/* Status */}
-          <div className="border rounded p-2">
-            <label className="font-medium">Asset Status</label>
-            {["active", "inactive", "under maintenance"].map((s) => (
-              <div key={s} className="flex items-center gap-2">
+          <div
+            className="p-4 rounded-xl border space-y-2
+  bg-white border-slate-200
+  dark:bg-slate-900 dark:border-white/10"
+          >
+            <label className="font-semibold text-slate-700 dark:text-slate-200">
+              Asset Status
+            </label>
+            {["active", "inactive", "in-repair"].map((s) => (
+              <label
+                key={s}
+                className={`
+                  flex items-center gap-2 px-2 py-1 rounded cursor-pointer transition
+                  ${
+                    filters.status === s
+                      ? "bg-blue-100 text-blue-700 dark:bg-cyan-500/10 dark:text-cyan-400"
+                      : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400"
+                  }
+                `}
+              >
                 <input
                   type="radio"
-                  name="status"
                   checked={filters.status === s}
                   onChange={() => handleChange("status", s)}
                 />
                 <span>{s}</span>
-              </div>
+              </label>
             ))}
           </div>
 
           {/* Purchase Date */}
-          <div className="border rounded p-2">
-            <label className="font-medium">Purchase Date</label>
+          <div
+            className="p-4 rounded-xl border space-y-2
+  bg-white border-slate-200
+  dark:bg-slate-900 dark:border-white/10 md:col-start-2"
+          >
+            <label className="font-semibold text-slate-700 dark:text-slate-200">
+              Purchase Date
+            </label>
 
             <div className="flex flex-col gap-2 mt-2 p-2">
-              <label className="text-sm">From</label>
+              <label className="text-sm text-slate-700 dark:text-slate-200">
+                From
+              </label>
               <input
                 type="date"
-                className="border p-2 rounded"
+                className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               filters.purchase_date_from === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
                 value={filters.purchase_date_from}
                 onChange={(e) =>
                   handleChange("purchase_date_from", e.target.value)
                 }
               />
-              <label className="text-sm">To</label>
+              <label className="text-sm text-slate-700 dark:text-slate-200">
+                To
+              </label>
               <input
                 type="date"
-                className="border p-2 rounded"
+                className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               filters.purchase_date_from === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
                 value={filters.purchase_date_to}
                 onChange={(e) =>
                   handleChange("purchase_date_to", e.target.value)
@@ -243,23 +372,45 @@ export default function AssetsList() {
           </div>
 
           {/* Warranty Date */}
-          <div className="border rounded p-2">
-            <label className="font-medium">Warranty Date</label>
+          <div
+            className="p-4 rounded-xl border space-y-2
+  bg-white border-slate-200
+  dark:bg-slate-900 dark:border-white/10"
+          >
+            <label className="font-semibold text-slate-700 dark:text-slate-200">
+              Warranty Date
+            </label>
 
             <div className="flex flex-col gap-2 mt-2 p-2">
-              <label className="text-sm">From</label>
+              <label className="text-sm text-slate-700 dark:text-slate-200">
+                From
+              </label>
               <input
                 type="date"
-                className="border p-2 rounded"
+                className={`border p-2 rounded bg-white dark:bg-slate-800 ${
+                  filters.warranty_expiry_from === ""
+                    ? "text-slate-400"
+                    : "text-black dark:text-white"
+                }
+             border-gray-300 dark:border-slate-700`}
                 value={filters.warranty_expiry_from}
                 onChange={(e) =>
                   handleChange("warranty_expiry_from", e.target.value)
                 }
               />
-              <label className="text-sm">To</label>
+              <label className="text-sm text-slate-700 dark:text-slate-200">
+                To
+              </label>
               <input
                 type="date"
-                className="border p-2 rounded"
+                className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               filters.warranty_expiry_to === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
                 value={filters.warranty_expiry_to}
                 onChange={(e) =>
                   handleChange("warranty_expiry_to", e.target.value)
@@ -267,11 +418,15 @@ export default function AssetsList() {
               />
             </div>
           </div>
-
+          {/* flex flex-col justify-end align-bottom */}
           {/* clear button */}
-          <div className="flex flex-col justify-end align-bottom">
+          <div className="md:col-span-4">
             <button
-              className="px-4 py-2 rounded text-sm font-semibold text-white bg-orange-400"
+              className="w-full px-4 py-2 rounded-xl font-semibold
+    bg-red-500/10 text-red-600
+    hover:bg-red-500 hover:text-white
+    dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-red-100
+    transition"
               onClick={() =>
                 setFilters({
                   search: "",
@@ -295,48 +450,78 @@ export default function AssetsList() {
         </div>
       )}
       {/* Assets table */}
-      <div className="border rounded overflow-x-auto">
+      <div className="border rounded-xl overflow-x-auto border-slate-200 dark:border-white/10">
         <table className="w-full text-sm">
-          <thead className="bg-orange-200">
+          <thead
+            className="bg-slate-100 text-slate-700
+    dark:bg-slate-800 dark:text-slate-200"
+          >
             <tr>
-              <th className="p-2 text-left">Asset ID</th>
-              <th className="p-2 text-left">Asset Name</th>
-              <th className="p-2 text-left">Assigned To</th>
-              <th className="p-2 text-center">Status</th>
-              <th className="p-2 text-center">View</th>
-              <th className="p-2 text-center">Update</th>
+              <th className="p-3 text-left border-b border-slate-200 dark:border-white/10">
+                Asset ID
+              </th>
+              <th className="p-3 text-left border-b border-slate-200 dark:border-white/10">
+                Asset Name
+              </th>
+              <th className="p-3 text-left border-b border-slate-200 dark:border-white/10">
+                Assigned To
+              </th>
+              <th className="p-3 text-center border-b border-slate-200 dark:border-white/10">
+                Status
+              </th>
+              <th className="p-3 text-center border-b border-slate-200 dark:border-white/10">
+                View
+              </th>
+              <th className="p-3 text-center border-b border-slate-200 dark:border-white/10">
+                Update
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="p-4 text-center">
+                <td
+                  colSpan="6"
+                  className="p-4 text-center text-slate-700 dark:text-slate-200"
+                >
                   Loading...
                 </td>
               </tr>
             ) : assets.length === 0 ? (
               <tr>
-                <td colSpan="6" className="p-4 text-center">
+                <td
+                  colSpan="6"
+                  className="p-4 text-center text-slate-700 dark:text-slate-200"
+                >
                   No assets found
                 </td>
               </tr>
             ) : (
               assets.map((asset) => (
-                <tr key={asset.public_id} className="border-t hover:bg-gray-50">
+                <tr
+                  key={asset.public_id}
+                  className="transition-colors
+    hover:bg-slate-100
+    dark:hover:bg-slate-800/60"
+                >
                   {/* Asset ID */}
-                  <td className="p-2 font-mono text-sm">{asset.public_id}</td>
+                  <td className="p-3 border-b border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300 font-mono text-sm">
+                    {asset.public_id}
+                  </td>
 
                   {/* Asset Name */}
-                  <td className="p-2">{asset.asset_name}</td>
+                  <td className="p-3 border-b border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300">
+                    {asset.asset_name}
+                  </td>
 
                   {/* Assigned To */}
-                  <td className="p-2">
+                  <td className="p-3 border-b border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300">
                     {asset.assigned_to || "NOT ASSIGNED"}
                   </td>
 
                   {/* Status */}
-                  <td className="p-2 text-center">
+                  <td className="p-3 border-b border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300 text-center">
                     <span
                       className={`px-3 py-1 text-xs font-medium border rounded-full ${getStatusStyles(
                         asset.status
@@ -347,22 +532,26 @@ export default function AssetsList() {
                   </td>
 
                   {/* View */}
-                  <td className="p-2 text-center">
+                  <td className="p-3 border-b border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300 text-center">
                     <button
                       onClick={() => navigate(`/assets/${asset.public_id}`)}
-                      className="text-blue-600 hover:underline"
+                      className="text-blue-600 hover:text-blue-500 hover:underline
+    dark:text-cyan-400 dark:hover:text-cyan-300 dark:hover:underline"
                     >
                       View
                     </button>
                   </td>
 
                   {/* Update */}
-                  <td className="p-2 text-center">
+                  <td className="p-3 border-b border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300 text-center">
                     <button
                       onClick={() =>
                         navigate(`/assets/${asset.public_id}/edit`)
                       }
-                      className="px-3 py-1 text-sm border rounded text-orange-600 border-orange-400 hover:bg-orange-50"
+                      className="px-3 py-1 rounded-lg border text-sm font-medium
+    text-blue-600 border-blue-400 hover:bg-blue-100
+    dark:text-cyan-400 dark:border-cyan-500/40 dark:hover:bg-cyan-500/10
+    transition"
                     >
                       Update
                     </button>

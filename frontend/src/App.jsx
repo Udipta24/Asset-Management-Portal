@@ -1,5 +1,8 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import PageTransition from "./components/PageTransition.jsx";
+import GlobalLoader from "./components/GlobalLoader.jsx";
 
 // ContextProviders
 import { ReferenceDataProvider } from "./context/ReferenceDataContext.jsx";
@@ -17,7 +20,6 @@ import Signup from "./pages/Signup";
 import ForgetPassword from "./pages/ForgetPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
-import Assets from "./pages/Assets";
 import AssetCreate from "./pages/AssetCreate";
 import AssetDetail from "./pages/AssetDetail";
 import AssetAssign from "./pages/AssetAssign";
@@ -35,93 +37,95 @@ import MaintenanceCreate from "./pages/maintenance/MaintenanceCreate.jsx";
 import MyMaintenance from "./pages/maintenance/MyMaintenance.jsx";
 
 import Vendors from "./pages/Vendors";
-import Locations from "./pages/Locations";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile"
-
-import RegSelect from "./pages/regions/RegionSelect.jsx";
-import RegAssets from "./pages/regions/RegionAssets.jsx";
-//import RegMapPick from "./RegionMapPicker.jsx";
 
 import MyRequests from "./pages/MyRequests.jsx";
 import RequestAsset from "./pages/RequestAsset.jsx";
 import AdminRequests from "./pages/AdminRequests.jsx";
 
+import { ThemeProvider } from "./context/ThemeContext";
+
 export default function App() {
+  const [loading, setLoading] = useState(false);
+
   return (
-    <AuthProvider>
-      <ReferenceDataProvider>
-        <Routes>
-          {/* Public Route */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forget-password" element={<ForgetPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-
-          {/*outlet is the page inside the layout that changes,
-      the main content is (sidebar + main content) , protected route prevents logged out user to see them,
-      in sidebar layout, we used outlet, the below children nodes appear using that. so we dont see them in login page*/}
-
-          {/* Protected Routes (sidebar layout) */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* Dashboard */}
-            <Route index element={<Dashboard />} />
-
-            {/* Assets */}
-            <Route path="assets" element={<AssetList />} />
-            <Route path="create-asset" element={<AssetCreate />} />
-            <Route path="assets/:id" element={<AssetDetail />} />
-            <Route path="assets/:id/edit" element={<AssetEdit />} />
-            <Route path="locations" element={<AssetLocations />} />
-
-            <Route path="departments" element={<Departments />} />
-            <Route path="designations" element={<Designations />} />
-            <Route path="categories" element={<Categories />} />
-            <Route path="subcategories" element={<Subcategories />} />
-
-            <Route path="/maintenance" element={<MaintenanceLayout />}>
-              {/* to make the "all" path as default on nav bar when clicking, we use index element,replace helps fix back button loop
-        it replaces current history entry instead of adding a new one */}
-
-              <Route index element={<Navigate to="all" replace />} />
-
-              <Route path="all" element={<MaintenanceList />} />
-              <Route path="issue" element={<MaintenanceCreate />} />
-              <Route path="my" element={<MyMaintenance />} />
-            </Route>
-
-            <Route path="/regions/select" element={<RegSelect />} />
-            <Route path="/regions/:regionName/assets" element={<RegAssets />} />
-
-            {/* Vendors */}
-            <Route path="vendors" element={<Vendors />} />
-
-            {/* Locations */}
-            <Route path="locations" element={<Locations />} />
-
-            {/*Asset assignment*/}
-            <Route path="assets/assign" element={<AssetAssign />} />
-
-            <Route path="request/create" element={<RequestAsset />} />
-            <Route path="request/my" element={<MyRequests />} />
-            <Route path="request/adminReq" element={<AdminRequests />} />
-
-            <Route path="users" element={<Users />} />
-            <Route path="users/profile/:publicId" element={<Profile />} />
-
-          </Route>
-          {/*protected ends here*/}
-        </Routes>
-      </ReferenceDataProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ReferenceDataProvider>
+          {loading && <GlobalLoader />}
+          <AnimatedRoutes setLoading={setLoading} />
+        </ReferenceDataProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
-// just saying ...this are only frontend Routes, we can use them in sidebars, they dont map to backend
+function AnimatedRoutes({ setLoading }) {
+  const location = useLocation();
+
+  useEffect(() => {
+    setLoading(true);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000); // 1 second visible loader
+    return () => clearTimeout(timer);
+  }, [location.pathname, setLoading]);
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Public Route */}
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
+        <Route path="/forget-password" element={<PageTransition><ForgetPassword /></PageTransition>} />
+        <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
+
+        {/* Protected Routes (sidebar layout) */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Note: We aren't wrapping these inner routes individually to avoid double transition conflict with the layout,
+                 but if desired, the MainLayout outlet can also be animated. 
+                 For now, we just animate the main auth pages as requested. */}
+
+          {/* Dashboard */}
+          <Route index element={<Dashboard />} />
+
+          {/* Assets */}
+          <Route path="assets" element={<AssetList />} />
+          <Route path="create-asset" element={<AssetCreate />} />
+          <Route path="assets/:id" element={<AssetDetail />} />
+          <Route path="assets/:id/edit" element={<AssetEdit />} />
+          <Route path="locations" element={<AssetLocations />} />
+
+          <Route path="departments" element={<Departments />} />
+          <Route path="designations" element={<Designations />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="subcategories" element={<Subcategories />} />
+
+          <Route path="/maintenance" element={<MaintenanceLayout />}>
+            <Route index element={<Navigate to="all" replace />} />
+            <Route path="all" element={<MaintenanceList />} />
+            <Route path="issue" element={<MaintenanceCreate />} />
+            <Route path="my" element={<MyMaintenance />} />
+          </Route>
+
+          <Route path="vendors" element={<Vendors />} />
+          <Route path="assets/assign" element={<AssetAssign />} />
+          <Route path="request/create" element={<RequestAsset />} />
+          <Route path="request/my" element={<MyRequests />} />
+          <Route path="request/adminReq" element={<AdminRequests />} />
+          <Route path="users" element={<Users />} />
+          <Route path="users/profile/:publicId" element={<Profile />} />
+
+        </Route>
+      </Routes>
+    </AnimatePresence>
+  );
+}

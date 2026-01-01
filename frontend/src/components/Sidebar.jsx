@@ -19,13 +19,15 @@ const SidebarItem = ({ label, icon: Icon, collapsed, to }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center gap-3 px-4 py-2 cursor-pointer text-sm border-b-2 border-orange-800 rounded
-       hover:bg-orange-600
-       ${isActive ? "bg-orange-600" : ""}`
+      `flex items-center gap-3 px-4 py-3 cursor-pointer text-sm font-medium transition-all duration-300
+       ${isActive
+        ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-400"
+        : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+      }`
     }
   >
-    <Icon size={22} />
-    {!collapsed && <span>{label}</span>}
+    <Icon size={20} className={({ isActive }) => (isActive ? "drop-shadow-sm dark:drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" : "")} />
+    {!collapsed && <span className="tracking-wide">{label}</span>}
   </NavLink>
 );
 
@@ -34,10 +36,12 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   useEffect(() => {
     const fetchMe = async () => {
+      try {
       const res = await API.get("/user/me");
-      console.log("res", res);
-      const userData = res.data.user;
-      setUser(userData);
+        setUser(res.data.user);
+      } catch (e) {
+        console.error("Failed to fetch user", e);
+      }
     };
     fetchMe();
   }, []);
@@ -45,9 +49,12 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const user_role = user.role;
   console.log("User role", user_role);
   return (
-    <aside className="bg-orange-700 text-white flex flex-col">
+    <aside
+      className={`bg-white dark:bg-slate-900/95 backdrop-blur-xl border-r border-slate-200 dark:border-white/10 text-slate-800 dark:text-white flex flex-col transition-all duration-300 z-20 ${collapsed ? "w-16" : "w-64"
+        }`}
+    >
       {/* Sidebar content */}
-      <div className="flex-1 space-y-1">
+      <div className="flex-1 overflow-y-auto py-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
         <SidebarItem
           label="Dashboard"
           icon={TbLayoutDashboardFilled}
@@ -60,10 +67,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           collapsed={collapsed}
           to="/assets"
         />
-        {user_role != "USER" && (
+        {user_role !== "USER" && (
           <>
             <SidebarItem
-              label="Create asset"
+              label="Create Asset"
               icon={FaPlus}
               collapsed={collapsed}
               to="/create-asset"
@@ -77,30 +84,25 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           </>
         )}
         <SidebarItem
-          label="Asset locations"
+          label="Asset Locations"
           icon={FaMapMarkerAlt}
           collapsed={collapsed}
           to="/locations"
         />
-        {user_role == "ADMIN" && (
+        {user_role === "ADMIN" && (
           <>
+            <div className="my-2 border-t border-slate-200 dark:border-white/5 mx-4" />
             <SidebarItem
-              label="Asset categories"
+              label="Asset Categories"
               icon={MdCategory}
               collapsed={collapsed}
               to="/categories"
             />
             <SidebarItem
-              label="Asset subcategories"
+              label="Asset Subcategories"
               icon={MdOutlineCategory}
               collapsed={collapsed}
               to="/subcategories"
-            />
-            <SidebarItem
-              label="Users"
-              icon={FaUsersRectangle}
-              collapsed={collapsed}
-              to="/users"
             />
             <SidebarItem
               label="Departments"
@@ -114,10 +116,17 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               collapsed={collapsed}
               to="/designations"
             />
+            <div className="my-2 border-t border-slate-200 dark:border-white/5 mx-4" />
+            <SidebarItem
+              label="Users Management"
+              icon={FaUsersRectangle}
+              collapsed={collapsed}
+              to="/users"
+            />
           </>
         )}
         <SidebarItem
-          label="Maintenance records"
+          label="Maintenance Records"
           icon={MdBuild}
           collapsed={collapsed}
           to="/maintenance"
@@ -125,13 +134,17 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       </div>
 
       {/* Footer toggle */}
-      <div className="border-t-2 border-orange-800 p-2 hover:bg-orange-600 rounded">
+      <div className="border-t border-slate-200 dark:border-white/10 p-4">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center justify-center gap-2 rounded"
+          className="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 hover:shadow-sm dark:hover:shadow-[0_0_10px_rgba(34,211,238,0.2)] transition-all duration-300 group border border-slate-200 dark:border-white/5"
         >
-          {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
-          {!collapsed && <span className="text-sm">Collapse</span>}
+          {collapsed ? (
+            <FaChevronRight className="text-blue-500 dark:text-cyan-400 group-hover:translate-x-1 transition-transform" />
+          ) : (
+            <FaChevronLeft className="text-blue-500 dark:text-cyan-400 group-hover:-translate-x-1 transition-transform" />
+          )}
+          {!collapsed && <span className="text-xs font-semibold text-slate-500 dark:text-cyan-100 uppercase tracking-widest">Collapse</span>}
         </button>
       </div>
     </aside>

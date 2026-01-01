@@ -8,7 +8,6 @@ import { useReferenceData } from "../hooks/useReferenceData";
 import axios from "axios";
 import { FaLocationDot } from "react-icons/fa6";
 
-
 function MapClickHandler({ onPick }) {
   useMapEvents({
     click(e) {
@@ -22,8 +21,8 @@ export default function AssetCreate() {
   const [showMap, setShowMap] = useState(false); //used to hide and show map
   const [form, setForm] = useState({
     asset_name: "",
-    category: "",
-    subcategory: "",
+    category: null,
+    subcategory: null,
     serial_number: "",
     model_number: "",
     purchase_date: "",
@@ -48,11 +47,12 @@ export default function AssetCreate() {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
-  const {fetchProtectedReferenceData} = useReferenceData();
+  const { fetchProtectedReferenceData } = useReferenceData();
   useEffect(() => {
     fetchProtectedReferenceData();
   }, []);
-  const { categories, subcategories, /*vendors, */ loadingProtected } = useReferenceData();
+  const { categories, subcategories, /*vendors, */ loadingProtected } =
+    useReferenceData();
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -95,20 +95,20 @@ export default function AssetCreate() {
     try {
       const body = {
         asset_name: form.asset_name,
-        category: form.category_name || undefined,
-        subcategory: form.subcategory_name || undefined,
-        serial_number: form.serial_number || undefined,
-        model_number: form.model_number || undefined,
-        purchase_date: form.purchase_date || undefined,
-        purchase_cost: form.purchase_cost || undefined,
-        vendor: form.vendor_name || undefined,
+        category: form.category || null,
+        subcategory: form.subcategory || null,
+        serial_number: form.serial_number || null,
+        model_number: form.model_number || null,
+        purchase_date: form.purchase_date || null,
+        purchase_cost: form.purchase_cost || null,
+        vendor: form.vendor || null,
         status: form.status || "active",
-        location: location || undefined,
-        assigned_to: form.assigned_username || undefined,
-        warranty_expiry: form.warranty_expiry || undefined,
-        description: form.description || undefined,
+        location: location || null,
+        assigned_to: form.assigned_to || null,
+        warranty_expiry: form.warranty_expiry || null,
+        description: form.description || null,
       };
-
+      console.log(body);
       const res = await API.post("/assets", body);
       const public_id = res.data.asset.public_id;
       Swal.fire({
@@ -138,34 +138,45 @@ export default function AssetCreate() {
   }
 
   return (
-    <div className="max-w-full bg-white p-6 rounded shadow">
-      <h2 className="text-2xl mb-4 font-bold text-orange-600">Create Asset</h2>
+    <div className="max-w-full bg-white dark:bg-slate-900 p-6 rounded shadow">
+      <h2 className="text-2xl mb-4 font-bold text-orange-600 dark:text-orange-400">
+        Create Asset
+      </h2>
 
       <form
         onSubmit={submit}
         className="grid grid-cols-1 md:grid-cols-2 gap-3 space-y-3"
       >
-        <div className="col-span-2 flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Asset name:
+        {/* Asset Name */}
+        <div className="col-span-1 md:col-span-2 flex flex-col">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Asset name
           </label>
           <input
-            className="border p-2 rounded"
-            placeholder="Asset Name"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             value={form.asset_name}
             onChange={(e) => handleChange("asset_name", e.target.value)}
             required
           />
         </div>
 
+        {/* Category */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Category:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Category
           </label>
           <select
-            className={`border p-2 rounded ${
-              form.category === "" ? "text-gray-400" : "text-black"
-            } focus:ring focus:ring-blue-200`}
+            className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               form.category === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
             value={form.category}
             onChange={(e) => handleChange("category", e.target.value)}
             required
@@ -179,148 +190,198 @@ export default function AssetCreate() {
           </select>
         </div>
 
+        {/* Subcategory */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Subcategory:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Subcategory
           </label>
           <select
-            className={`border p-2 rounded ${
-              form.subcategory === "" ? "text-gray-400" : "text-black"
-            } focus:ring focus:ring-blue-200`}
+            className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               form.subcategory === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
             value={form.subcategory}
             onChange={(e) => handleChange("subcategory", e.target.value)}
             required
           >
-            <option value="">Select Subcategory (after selecting category)</option>
-            {form.category && subcategories[form.category].map((subCat) => (
-              <option key={subCat.subcategory_id} value={subCat.subcategory_id}>
-                {subCat.subcategory_name}
-              </option>
-            ))}
+            <option value="">
+              Select Subcategory (after selecting category)
+            </option>
+            {form.category &&
+              subcategories[form.category].map((subCat) => (
+                <option
+                  key={subCat.subcategory_id}
+                  value={subCat.subcategory_id}
+                >
+                  {subCat.subcategory_name}
+                </option>
+              ))}
           </select>
         </div>
 
+        {/* Model number */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Model number:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Model number
           </label>
           <input
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Model Number"
             value={form.model_number}
             onChange={(e) => handleChange("model_number", e.target.value)}
           />
         </div>
 
+        {/* Serial number */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Serial number:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Serial number
           </label>
           <input
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Serial Number"
             value={form.serial_number}
             onChange={(e) => handleChange("serial_number", e.target.value)}
           />
         </div>
 
+        {/* Purchase date */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Purchase date:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Purchase date
           </label>
           <input
             type="date"
-            className={`border p-2 rounded ${
-              form.vendor === "" ? "text-gray-400" : "text-black"
-            } focus:ring focus:ring-blue-200`}
+            className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               form.purchase_date === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
             value={form.purchase_date}
             onChange={(e) => handleChange("purchase_date", e.target.value)}
           />
         </div>
 
+        {/* Purchase Cost */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Purchase cost:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Purchase cost
           </label>
           <input
             type="number"
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Purchase Cost"
             value={form.purchase_cost}
             onChange={(e) => handleChange("purchase_cost", e.target.value)}
           />
         </div>
 
+        {/* Vendor */}
         {/* <div className="col-span-2 flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Vendor:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Vendor
           </label>
-        <select
-          className={`border p-2 rounded ${
-            form.vendor === "" ? "text-gray-400" : "text-black"
-          } focus:ring focus:ring-blue-200`}
-          value={form.vendor}
-          onChange={(e) => handleChange("vendor",e.target.value)}
-          required
-        >
-          <option value="">Select Vendor</option>
-          {vendors.map((vd) => (
-            <option key={vd.vendor_id} value={vd.vendor_id}>
-              {vd.vendor_name}
-            </option>
-          ))}
-        </select>
+          <select
+            className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               form.vendor === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
+            value={form.vendor}
+            onChange={(e) => handleChange("vendor", e.target.value)}
+            required
+          >
+            <option value="">Select Vendor</option>
+            {vendors.map((vd) => (
+              <option key={vd.vendor_id} value={vd.vendor_id}>
+                {vd.vendor_name}
+              </option>
+            ))}
+          </select>
         </div> */}
 
+        {/* Warrantry expiry */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Warranty expiry:
           </label>
           <input
             type="date"
-            className={`border p-2 rounded ${
-              form.warranty_expiry === "" ? "text-gray-400" : "text-black"
-            } focus:ring focus:ring-blue-200`}
+            className={`border p-2 rounded
+             bg-white dark:bg-slate-800
+             ${
+               form.purchase_date === ""
+                 ? "text-slate-400"
+                 : "text-black dark:text-white"
+             }
+             border-gray-300 dark:border-slate-700`}
             value={form.warranty_expiry}
             onChange={(e) => handleChange("warranty_expiry", e.target.value)}
           />
         </div>
-
+        {/* Assigned User Id */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Assigned User ID:
           </label>
           <input
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             placeholder="Assigned User ID"
             value={form.assigned_to}
             onChange={(e) => handleChange("assigned_to", e.target.value)}
           />
         </div>
 
+        {/* Status */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-600 mb-1">
-            Asset status:
+          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            Asset status
           </label>
           <select
-            className="border p-2 rounded"
+            className="border p-2 rounded
+             bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
             value={form.status}
             onChange={(e) => handleChange("status", e.target.value)}
           >
             <option value="active">Active</option>
             <option value="in-repair">In Repair</option>
-            <option value="retired">Retired</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
 
         <div
           onClick={() => setShowMap(true)}
-          className="col-span-2 border border-blue-600 text-blue-600 p-2 rounded flex justify-center items-center"
+          className="md:col-span-2 border border-blue-600 text-blue-600 bg-white dark:bg-slate-800 p-2 rounded flex justify-center items-center"
         >
-          <FaLocationDot size={22} /> <span className="ml-1">Select location on Map</span> 
+          <FaLocationDot size={22} />{" "}
+          <span className="ml-1">Select location on Map</span>
         </div>
         {location.latitude && location.longitude && (
-          <div className="col-span-2 text-sm text-gray-600">
+          <div className="md:col-span-2 text-sm text-slate-600">
             <p>
               Selected: {location.latitude.toFixed(5)},{" "}
               {location.longitude.toFixed(5)}
@@ -329,7 +390,7 @@ export default function AssetCreate() {
           </div>
         )}
         {showMap && (
-          <div className="col-span-2">
+          <div className="md:col-span-2">
             <MapContainer
               center={[23.8315, 91.2868]}
               zoom={12}
@@ -356,7 +417,9 @@ export default function AssetCreate() {
         )}
 
         <textarea
-          className="border p-2 rounded col-span-2"
+          className="border p-2 rounded md:col-span-2 bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
           placeholder="Description"
           value={form.description}
           onChange={(e) => handleChange("description", e.target.value)}
@@ -369,7 +432,8 @@ export default function AssetCreate() {
           setDocuments={setDocuments}
         />
 
-        <button className="col-span-2 bg-blue-600 text-white p-2 rounded mt-4">
+        <button className="md:col-span-2 bg-blue-600 text-white p-2 rounded mt-4 hover:bg-blue-700 hover:shadow-md
+    active:scale-95">
           {loading ? "Processing..." : "Create Asset"}
         </button>
       </form>

@@ -44,50 +44,74 @@ export default function Categories() {
   };
 
   return (
-    <div className="p-max-w-full bg-white p-6 rounded shadow">
-      <h1 className="text-2xl font-bold mb-6">Categories</h1>
+    <div className="p-6 max-w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+      <h1 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">
+        Categories
+      </h1>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border border-orange-400 rounded">
-          <thead className="bg-gradient-to-br from-orange-300 via-orange-200 to-orange-300 text-orange-800">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 ">
+        <table className="w-full border-collapse">
+          <thead
+            className="
+    bg-slate-100 text-slate-700
+    dark:bg-slate-800/60 dark:text-slate-200
+  "
+          >
             <tr>
-              <th className="border border-orange-400 px-4 py-2 text-left">
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
                 Category Name
               </th>
-              <th className="border border-orange-400 px-4 py-2 text-left">
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
                 Category Code
               </th>
-              <th className="border border-orange-400 px-4 py-2 text-left">
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
                 Description
               </th>
-              <th className="border border-orange-400 px-4 py-2 text-center"></th>
-              <th className="border border-orange-400 px-4 py-2 text-center"></th>
+              <th className="px-4 py-3 text-center border-b border-slate-200 dark:border-white/10" />
+              <th className="px-4 py-3 text-center border-b border-slate-200 dark:border-white/10" />
             </tr>
           </thead>
 
           <tbody>
             {categories.map((cat) => (
-              <tr key={cat.category_id} className="hover:bg-orange-50">
-                <td className="border border-orange-200 px-4 py-2">
+              <tr
+                key={cat.category_id}
+                className="transition-colors
+                  hover:bg-slate-100
+                  dark:hover:bg-slate-800/60
+                  text-slate-800 dark:text-slate-100"
+              >
+                <td className="px-4 py-2 border-b border-slate-200 dark:border-white/5">
                   {cat.category_name}
                 </td>
 
-                <td className="border border-orange-200 px-4 py-2">
+                <td className="px-4 py-2 border-b border-slate-200 dark:border-white/5">
                   {cat.category_code}
                 </td>
 
-                <td className="border border-orange-200 px-4 py-2">
+                <td className="px-4 py-2 border-b border-slate-200 dark:border-white/5">
                   {editingId === cat.category_id ? (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       <input
-                        className="border border-orange-200 rounded px-2 py-1 w-full"
+                        className="
+          w-full bg-transparent border-b px-1 py-1 outline-none
+          text-slate-800 border-blue-400 focus:border-blue-600
+          dark:text-white dark:border-cyan-500/40 dark:focus:border-cyan-400
+          transition-colors
+        "
                         value={editDescription}
                         placeholder="Cannot be empty"
                         onChange={(e) => setEditDescription(e.target.value)}
                       />
                       <button
                         onClick={() => saveDescription(cat.category_id)}
-                        className="text-green-600"
+                        className="
+                        p-2 rounded-lg
+          text-green-600
+          hover:bg-green-100
+          dark:text-green-400 dark:hover:bg-green-500/10
+          transition
+          "
                       >
                         <FaSave />
                       </button>
@@ -95,26 +119,40 @@ export default function Categories() {
                   ) : cat.description ? (
                     <span>{cat.description}</span>
                   ) : (
-                    <span className="text-gray-400 italic">No description</span>
+                    <span className="italic text-slate-400 dark:text-slate-500">
+                      No description
+                    </span>
                   )}
                 </td>
 
-                <td className="border border-orange-200 px-4 py-2 text-center hover:bg-blue-100">
+                <td className="px-4 py-2 text-center border-b border-slate-200 dark:border-white/5">
                   <button
                     onClick={() => {
                       setEditingId(cat.category_id);
                       setEditDescription(cat.description || "");
                     }}
-                    className="text-blue-600"
+                    className="
+      p-2 rounded-lg
+      text-blue-600
+      hover:bg-blue-100
+      dark:text-cyan-400 dark:hover:bg-cyan-500/10
+      transition
+    "
                   >
                     <FaEdit />
                   </button>
                 </td>
 
-                <td className="border border-orange-200 px-4 py-2 text-center hover:bg-red-100">
+                <td className="px-4 py-2 text-center border-b border-slate-200 dark:border-white/5">
                   <button
                     onClick={() => deleteCategory(cat.category_id)}
-                    className="text-red-600"
+                    className="
+      p-2 rounded-lg
+      text-red-600
+      hover:bg-red-100
+      dark:text-red-400 dark:hover:bg-red-500/10
+      transition
+    "
                   >
                     <FaTrash />
                   </button>
@@ -123,10 +161,16 @@ export default function Categories() {
             ))}
 
             {/* ADD CATEGORY ROW */}
-            <tr className="bg-gradient-to-br from-blue-950 via-blue-900 to-blue-950">
+            <tr
+              className="bg-slate-50
+  dark:bg-slate-800/60"
+            >
               <td colSpan={2} className="px-4 py-2">
                 <input
-                  className="border rounded px-2 py-1 w-full"
+                  className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors"
                   placeholder="Category Name"
                   value={newCategory.category_name}
                   onChange={(e) =>
@@ -140,7 +184,10 @@ export default function Categories() {
 
               <td colSpan={2} className="px-4 py-2">
                 <input
-                  className="border rounded px-2 py-1 w-full"
+                  className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors"
                   placeholder="Description (optional)"
                   value={newCategory.description}
                   onChange={(e) =>
@@ -152,8 +199,15 @@ export default function Categories() {
                 />
               </td>
 
-              <td className="px-4 py-2 text-center hover:bg-green-900">
-                <button onClick={addCategory} className="text-green-400">
+              <td className="px-4 py-2 text-center">
+                <button
+                  onClick={addCategory}
+                  className="p-2 rounded-lg
+    text-green-600
+    hover:bg-green-100
+    dark:text-green-400 dark:hover:bg-green-500/10
+    transition"
+                >
                   <FaPlus />
                 </button>
               </td>

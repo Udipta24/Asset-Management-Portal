@@ -11,7 +11,7 @@ const UploadFiles = ({ images, documents, setImages, setDocuments }) => {
     if (files.length > 5) {
       Swal.fire({
         icon: "warning",
-        text: "You can upload a maximum of 5 images"
+        text: "You can upload a maximum of 5 images",
       });
       return;
     }
@@ -25,7 +25,7 @@ const UploadFiles = ({ images, documents, setImages, setDocuments }) => {
     if (files.length > 5) {
       Swal.fire({
         icon: "warning",
-        text: "You can upload a maximum of 5 documents"
+        text: "You can upload a maximum of 5 documents",
       });
       return;
     }
@@ -34,17 +34,27 @@ const UploadFiles = ({ images, documents, setImages, setDocuments }) => {
   };
 
   return (
-    <div className="space-y-4 col-span-2">
+    <div className="space-y-4">
       {/* Upload Images */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
+      <div
+        className="border p-2 rounded  bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
+      >
+        <label className="block text-sm mb-2">
           Upload asset images (max 5)
         </label>
 
         <button
           type="button"
           onClick={() => imageRef.current.click()}
-          className="px-4 py-2 border rounded bg-gray-100 hover:bg-gray-200"
+          className="px-4 py-2 rounded-xl font-semibold transition-all
+    bg-blue-600 text-white
+    hover:bg-blue-700 hover:shadow-md
+    active:scale-95
+
+    dark:bg-cyan-500 dark:text-slate-900
+    dark:hover:bg-cyan-400"
         >
           Upload Images
         </button>
@@ -59,22 +69,32 @@ const UploadFiles = ({ images, documents, setImages, setDocuments }) => {
         />
 
         {images.length > 0 && (
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-400 mt-1">
             {images.length} image(s) selected
           </p>
         )}
       </div>
 
       {/* Upload Documents */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
+      <div
+        className="border p-2 rounded bg-white dark:bg-slate-800
+             text-black dark:text-white
+             border-gray-300 dark:border-slate-700"
+      >
+        <label className="block text-sm mb-2">
           Upload asset documents (max 5)
         </label>
 
         <button
           type="button"
           onClick={() => docRef.current.click()}
-          className="px-4 py-2 border rounded bg-gray-100 hover:bg-gray-200"
+          className="px-4 py-2 rounded-xl font-semibold transition-all
+    bg-blue-600 text-white
+    hover:bg-blue-700 hover:shadow-md
+    active:scale-95
+
+    dark:bg-cyan-500 dark:text-slate-900
+    dark:hover:bg-cyan-400"
         >
           Upload Documents
         </button>
@@ -82,14 +102,14 @@ const UploadFiles = ({ images, documents, setImages, setDocuments }) => {
         <input
           ref={docRef}
           type="file"
-          accept=".pdf,.doc,.docx"
+          accept="application/pdf"
           multiple
           hidden
           onChange={handleDocumentsChange}
         />
 
         {documents.length > 0 && (
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-400 mt-1">
             {documents.length} document(s) selected
           </p>
         )}

@@ -1,7 +1,7 @@
 // role based authorization
 exports.authorize = (...roles) => (req, res, next) => {
-  console.log("AUTHORIZE req.user =", req.user);
-    console.log("EXPECTED ROLES =", roles);
+  // console.log("AUTHORIZE req.user =", req.user);
+  //   console.log("EXPECTED ROLES =", roles);
   if (!req.user || !req.user.role) {
     return res.status(403).json({ message: "Access denied: No user role" });
   }

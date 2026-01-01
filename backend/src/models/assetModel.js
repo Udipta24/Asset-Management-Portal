@@ -30,27 +30,27 @@ exports.createAsset = async (data) => {
     const category_code = await getCatCode(data.category);
 
     // --- Get subcategory (id/code, under same category) ---
-    const subcategory_code = await getSubcatCode(data.subcategory, category_id);
+    const subcategory_code = await getSubcatCode(data.subcategory, data.category);
 
     // --- Insert asset, get id ---
     // Basic fields, if more may be present in database, adjust as needed.
-    const insertRes = await client.query(
+    const insertRes = await db.query(
       `INSERT INTO assets (
                 asset_name, category_id, subcategory_id, serial_number, model_number,
-                purchase_date, purchase_cost, vendor, status, assigned_to,
+                purchase_date, purchase_cost, vendor_id, status, assigned_to,
                 warranty_expiry, description
             ) VALUES
             ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
             RETURNING asset_id`,
       [
         data.asset_name,
-        category,
-        subcategory,
+        Number(data.category),
+        Number(data.subcategory),
         data.serial_number,
         data.model_number,
         data.purchase_date,
-        data.purchase_cost,
-        vendor,
+        Number(data.purchase_cost),
+        Number(data.vendor),
         data.status,
         data.assigned_to || "NOT ASSIGNED",
         data.warranty_expiry,
@@ -63,7 +63,7 @@ exports.createAsset = async (data) => {
     if (data.location) {
       const { latitude, longitude, address, suburb, city, district, state, country } =
         data.location;
-      const locRes = await client.query(
+      const locRes = await db.query(
         `INSERT INTO locations (asset_id, latitude, longitude, address, suburb, city, district, state, country)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                  RETURNING location_id`,
@@ -71,26 +71,27 @@ exports.createAsset = async (data) => {
       );
       location_id = locRes.rows[0].location_id;
     }
+    
     // --- Generate public_id: AST-{category_code}-{subcategory_code}-{000001} ---
     const padded = String(asset_id).padStart(6, "0");
     const public_id = `AST-${category_code}-${subcategory_code}-${padded}`;
 
     // --- Update asset with public_id ---
-    await client.query(
+    await db.query(
       `UPDATE assets SET public_id = $1, location_id = $2 WHERE asset_id = $3`,
       [public_id, location_id, asset_id]
     );
 
-    await client.query("COMMIT");
+    await db.query("COMMIT");
 
     // fetch the full row
-    const assetRes = await client.query(
+    const assetRes = await db.query(
       `SELECT * FROM assets WHERE asset_id = $1`,
       [asset_id]
     );
     return assetRes.rows[0];
   } catch (err) {
-    await client.query("ROLLBACK");
+    await db.query("ROLLBACK");
     throw err;
   }
 };
@@ -118,11 +119,11 @@ exports.listAssets = async (filters = {}) => {
 
   if (category) {
     whereClauses.push(`category_id = $${idx++}`);
-    values.push(category);
+    values.push(Number(category));
   }
   if (category && subcategory) {
     whereClauses.push(`subcategory_id = $${idx++}`);
-    values.push(subcategory);
+    values.push(Number(subcategory));
   }
   if (purchase_date_from) {
     whereClauses.push(`purchase_date >= $${idx++}`);
@@ -134,7 +135,7 @@ exports.listAssets = async (filters = {}) => {
   }
   if (vendor) {
     whereClauses.push(`vendor_id = $${idx++}`);
-    values.push(vendor);
+    values.push(Number(vendor));
   }
   if (status) {
     whereClauses.push(`status = $${idx++}`);
