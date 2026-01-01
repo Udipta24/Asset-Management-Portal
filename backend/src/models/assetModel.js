@@ -58,6 +58,13 @@ exports.createAsset = async (data) => {
       ]
     );
     const asset_id = insertRes.rows[0].asset_id;
+    // --- Generate public_id: AST-{category_code}-{subcategory_code}-{000001} ---
+    const padded = String(asset_id).padStart(6, "0");
+    const public_id = `AST-${category_code}-${subcategory_code}-${padded}`;
+    await db.query(
+      `UPDATE assets SET public_id = $1 WHERE asset_id = $2`,
+      [public_id, asset_id]
+    );
     // Insert into locations table asset_id, latitude, longitude from data, returning location_id
     let location_id = null;
     if (data.location) {
@@ -72,14 +79,11 @@ exports.createAsset = async (data) => {
       location_id = locRes.rows[0].location_id;
     }
     
-    // --- Generate public_id: AST-{category_code}-{subcategory_code}-{000001} ---
-    const padded = String(asset_id).padStart(6, "0");
-    const public_id = `AST-${category_code}-${subcategory_code}-${padded}`;
 
     // --- Update asset with public_id ---
     await db.query(
-      `UPDATE assets SET public_id = $1, location_id = $2 WHERE asset_id = $3`,
-      [public_id, location_id, asset_id]
+      `UPDATE assets SET location_id = $1 WHERE asset_id = $2`,
+      [location_id, asset_id]
     );
 
     await db.query("COMMIT");
@@ -230,26 +234,28 @@ exports.getAssetById = async (public_id) => {
   if (!public_id) {
     throw new Error("Asset ID required");
   }
+  console.log(public_id);
+  console.log(typeof public_id)
   try {
     const query = `
           SELECT 
               a.*,
-              c.categoryname AS category_name,
-              sc.subcategoryname AS subcategory_name,
-              v.vendorname AS vendor_name,
-              l.lon AS longitude,
-              l.lat AS latitude,
+              c.category_name AS category_name,
+              sc.subcategory_name AS subcategory_name,
+              v.vendor_name AS vendor_name,
+              l.longitude AS longitude,
+              l.latitude AS latitude,
               l.address, l.suburb, l.city, l.district, l.state, l.country,
               u.department_id AS asset_department_id
           FROM assets a
-          LEFT JOIN asset_categories c ON a.category_id = c.id
-          LEFT JOIN sub_categories sc ON a.subcategory_id = sc.id
-          LEFT JOIN vendors v ON a.vendor_id = v.id
-          LEFT JOIN locations l ON a.location_id = l.id
-          LEFT JOIN users u ON a.assigned_to = u.user_id
+          LEFT JOIN asset_categories c ON a.category_id = c.category_id
+          LEFT JOIN sub_categories sc ON a.subcategory_id = sc.subcategory_id
+          LEFT JOIN vendors v ON a.vendor_id = v.vendor_id
+          LEFT JOIN locations l ON a.location_id = l.location_id
+          LEFT JOIN users_data u ON a.assigned_to = u.public_id
           WHERE a.public_id = $1
       `;
-    const values = [public_id];
+    const values = [String(public_id)];
     const res = await db.query(query, values);
     if (res.rows.length === 0) {
       return null;
@@ -286,7 +292,7 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
       if (key === "longitude" || key === "latitude") {
         continue;
       }
-      if (!allowedAssetFields.includes(key)) {
+      if (!allowedFields.includes(key)) {
         continue; // silently ignore unwanted fields
       }
       setClauses.push(`${key} = $${idx++}`);
@@ -312,7 +318,7 @@ exports.updateAsset = async (public_id, updateFields = {}) => {
       if (locRes.rows.length > 0 && locRes.rows[0].location_id) {
         const locationId = locRes.rows[0].location_id;
         await db.query(
-          `UPDATE locations SET longitude = $1, latitude = $2, address = $3, suburb = $4, city = $5, district = $6, state = $7, country = $8 WHERE id = $9`,
+          `UPDATE locations SET longitude = $1, latitude = $2, address = $3, suburb = $4, city = $5, district = $6, state = $7, country = $8 WHERE location_id = $9`,
           [
             updateFields.longitude,
             updateFields.latitude,
@@ -417,6 +423,7 @@ exports.deleteAssetFileMeta = async (fileId) => {
 };
 
 exports.getFilesByAssetId = async (public_id) => {
+  console.log(public_id);
   const res = await db.query(
     `SELECT file_id, bucket, file_path, original_name, file_type
      FROM asset_files
@@ -425,3 +432,7 @@ exports.getFilesByAssetId = async (public_id) => {
   );
   return res.rows;
 };
+exports.getId = async (public_id) => {
+  const res = await db.query(`SELECT asset_id FROM assets WHERE public_id = $1`, [public_id]);
+  return res.rows[0];
+}

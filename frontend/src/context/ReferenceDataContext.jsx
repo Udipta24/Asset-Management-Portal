@@ -11,7 +11,7 @@ export const ReferenceDataProvider = ({ children }) => {
   // Protected (auth needed)
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState({});
-  // const [vendors, setVendors] = useState([]);
+  const [vendors, setVendors] = useState([]);
 
   const [loadingPublic, setLoadingPublic] = useState(true);
   const [loadingProtected, setLoadingProtected] = useState(false);
@@ -41,12 +41,15 @@ export const ReferenceDataProvider = ({ children }) => {
       const [catRes, subcatRes, vendorRes] = await Promise.all([
         API.get("/categories"),
         API.get("/subcategories/by-category"),
-        // API.get("/vendors"),
+        API.get("/vendors"),
       ]);
-      
+      console.log("Categories: ", catRes.data);
+      console.log("Subategories: ", subcatRes.data);
+      console.log("Vendors: ", vendorRes.data);
+
       setCategories(catRes.data);
       setSubcategories(subcatRes.data);
-      // setVendors(vendorRes.data);
+      setVendors(vendorRes.data.vendors);
     } catch (err) {
       console.error("Failed to load protected reference data", err);
     } finally {
@@ -69,7 +72,7 @@ export const ReferenceDataProvider = ({ children }) => {
         // protected
         categories,
         subcategories,
-        // vendors,
+        vendors,
         loadingProtected,
 
         // actions

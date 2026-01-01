@@ -1,9 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/api";
+import axios from "axios";
+
 import { FiFileText } from "react-icons/fi";
 import { ImBin } from "react-icons/im";
+import { FaLocationDot } from "react-icons/fa6";
+
 import Swal from "sweetalert2";
+
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+
+import UploadFiles from "../components/UploadFiles";
+
+/* ---------------- MAP CLICK HANDLER ---------------- */
 function MapClickHandler({ onPick }) {
   useMapEvents({
     click(e) {
@@ -15,17 +25,42 @@ function MapClickHandler({ onPick }) {
 export default function AssetEdit() {
   const url = import.meta.env.VITE_API_URL;
   const { id } = useParams(); // public_id
+  console.log(id);
   const navigate = useNavigate();
 
   const [asset, setAsset] = useState(null);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [imageUrls, setImageUrls] = useState({});
-  const [showMap, setShowMap] = useState(false); //used to hide and show map
+  const [showMap, setShowMap] = useState(false);
+
+  const [form, setForm] = useState({
+    status: "",
+    warranty_expiry: "",
+    assigned_to: "",
+    description: "",
+  });
+
+  const [location, setLocation] = useState({
+    latitude: null,
+    longitude: null,
+    address: "",
+    suburb: "",
+    city: "",
+    district: "",
+    state: "",
+    country: "",
+  });
+
+  const [images, setImages] = useState([]);
+  const [documents, setDocuments] = useState([]);
+
+  /* ---------------- FETCH ASSET ---------------- */
   useEffect(() => {
     const fetchAsset = async () => {
       try {
         const res = await API.get(`/assets/${id}`);
+        console.log(res.data);
         setAsset(res.data.asset);
         setFiles(res.data.files || []);
       } catch (err) {
@@ -37,42 +72,38 @@ export default function AssetEdit() {
 
     fetchAsset();
   }, [id]);
-  const [form, setForm] = useState({
-    status: asset.status,
-    warranty_expiry: asset.warranty_expiry,
-    assigned_to: asset.assigned_to,
-    description: asset.description,
-  });
-  const [location, setLocation] = useState({
-    latitude: Number(asset.latitude),
-    longitude: Number(asset.longitude),
-    address: asset.address,
-    suburb: asset.suburb,
-    city: asset.city,
-    district: asset.district,
-    state: asset.state,
-    country: asset.country,
-  });
-  const [images, setImages] = useState([]);
-  const [documents, setDocuments] = useState([]);
 
-  if (loading) {
-    return <div className="p-6">Loading asset details...</div>;
-  }
+  /* ---------------- SYNC FORM AFTER LOAD ---------------- */
+  useEffect(() => {
+    if (!asset) return;
 
-  if (!asset) {
-    return <div className="p-6">Asset not found</div>;
-  }
+    setForm({
+      status: asset.status || "active",
+      warranty_expiry: asset.warranty_expiry || "",
+      assigned_to: asset.assigned_to || "",
+      description: asset.description || "",
+    });
 
+    setLocation({
+      latitude: asset.latitude ? Number(asset.latitude) : null,
+      longitude: asset.longitude ? Number(asset.longitude) : null,
+      address: asset.address || "",
+      suburb: asset.suburb || "",
+      city: asset.city || "",
+      district: asset.district || "",
+      state: asset.state || "",
+      country: asset.country || "",
+    });
+  }, [asset]);
+
+  /* ---------------- FILE HELPERS ---------------- */
   const imageFiles = files.filter((f) => f.file_type === "image");
   const docFiles = files.filter((f) => f.file_type === "document");
   const loadImageBlob = async (fileId) => {
-    const res = await API.get(`assets/files/${fileId}?intent=view`, {
-      credentials: "include",
+    const res = await API.get(`/assets/files/${fileId}?intent=view`, {
+      responseType: "blob",
     });
-
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
+    return URL.createObjectURL(res.data);
   };
 
   useEffect(() => {
@@ -81,25 +112,22 @@ export default function AssetEdit() {
 
       for (const img of imageFiles) {
         try {
-          const blobUrl = await loadImageBlob(img.file_id);
-          urls[img.file_id] = blobUrl;
+          urls[img.file_id] = await loadImageBlob(img.file_id);
         } catch (err) {
-          console.error("Failed to load image", err);
+          console.error("Image load failed", err);
         }
       }
 
       setImageUrls(urls);
     };
 
-    if (files.length && imageFiles.length) {
-      loadImages();
-    }
+    if (imageFiles.length) loadImages();
 
     return () => {
       // cleanup blob URLs
       Object.values(imageUrls).forEach(URL.revokeObjectURL);
     };
-  }, [files]);
+  }, [imageFiles]);
 
   const previewFile = (fileId) => {
     window.open(
@@ -111,6 +139,8 @@ export default function AssetEdit() {
   const deleteFile = async (fileId) => {
     try {
       const res = await API.delete(`/files/${fileId}`);
+      setFiles((prev) => prev.filter((f) => f.file_id !== fileId));
+
       Swal.fire({
         icon: "success",
         text: res.data.message,
@@ -150,8 +180,8 @@ export default function AssetEdit() {
         country: addr.country || "",
       };
     } catch (err) {
-      console.error("Reverse geocoding failed:", err);
-      return { latitude: lat, longitude: lng };
+      console.error("Reverse geocoding failed", err);
+      return { latitude: lat, longitude: lon };
     }
   };
   const submit = async (e) => {
@@ -159,18 +189,11 @@ export default function AssetEdit() {
     setLoading(true);
     try {
       const body = {
-        status: form.status || "active",
-        assigned_to: form.assigned_username || undefined,
+        status: form.status,
+        assigned_to: form.assigned_to || undefined,
         warranty_expiry: form.warranty_expiry || undefined,
         description: form.description || undefined,
-        latitude: location.latitude || undefined,
-        longitude: location.longitude || undefined,
-        address: location.address || undefined,
-        suburb: location.suburb || undefined,
-        city: location.city || undefined,
-        district: location.district || undefined,
-        state: location.state || undefined,
-        country: location.country || undefined,
+        ...location,
       };
 
       await API.patch(`/assets/${asset.public_id}`, body);
@@ -179,7 +202,8 @@ export default function AssetEdit() {
         text: `Asset ID is : ${asset.public_id}`,
         icon: "success",
       });
-      nav(`/assets/${asset.public_id}`);
+
+      navigate(`/assets/${asset.public_id}`);
     } catch (err) {
       console.error(err);
       Swal.fire({
@@ -191,6 +215,11 @@ export default function AssetEdit() {
       setLoading(false);
     }
   };
+
+  /* ---------------- RENDER ---------------- */
+  if (loading) return <div className="p-6">Loading asset details...</div>;
+  if (!asset) return <div className="p-6">Asset not found</div>;
+
   return (
     <div className="max-w-full bg-white dark:bg-slate-900 p-6 rounded shadow">
       <h2 className="text-2xl mb-4 font-bold text-orange-600 dark:text-orange-400">
@@ -201,7 +230,7 @@ export default function AssetEdit() {
         onSubmit={submit}
         className="grid grid-cols-1 md:grid-cols-2 gap-3 space-y-3"
       >
-        <div className="col-span-2 flex flex-col">
+        <div className="col-span-1 md:col-span-2 flex flex-col">
           <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Asset name:
           </label>
@@ -216,7 +245,7 @@ export default function AssetEdit() {
           />
         </div>
 
-        <div className="col-span-2 flex flex-col">
+        <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Category:
           </label>
@@ -230,7 +259,7 @@ export default function AssetEdit() {
           />
         </div>
 
-        <div className="col-span-2 flex flex-col">
+        <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Subcategory:
           </label>
@@ -305,19 +334,20 @@ export default function AssetEdit() {
           />
         </div>
 
-        {/* <div className="flex flex-col">
+        <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Vendor:
           </label>
           <input
-className="border p-2 rounded
+            className="border p-2 rounded
              bg-white dark:bg-slate-800
              text-black dark:text-white
-             border-gray-300 dark:border-slate-700"            placeholder="Vendor"
+             border-gray-300 dark:border-slate-700"
+            placeholder="Vendor"
             value={asset.vendor_name}
             disabled
           />
-        </div> */}
+        </div>
 
         <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
@@ -439,7 +469,7 @@ className="border p-2 rounded
                   <img
                     src={imageUrls[img.file_id]}
                     alt={img.original_name}
-                    className="h-40 w-40 object-cover"
+                    className="h-40 w-40 object-cover rounded"
                   />
                   <div className="flex justify-between items-center p-2 text-xs">
                     <span className="truncate text-black dark:text-white">

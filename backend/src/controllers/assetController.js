@@ -3,9 +3,17 @@ const assetModel = require("../models/assetModel");
 const { supabase } = require("../config/supabaseClient");
 
 async function uploadFile(file, asset_id, public_id) {
-  const bucket = file.mimetype.startsWith("image/")
-    ? "asset-images"
-    : "asset-documents";
+  let bucket, fileType;
+
+  if (file.mimetype.startsWith("image/")) {
+    bucket = "asset-images";
+    fileType = "image";
+  } else if (file.mimetype.includes("pdf")) {
+    bucket = "asset-documents";
+    fileType = "document";
+  } else {
+    throw new Error("Unsupported file type");
+  }
 
   const filePath = `${public_id}/${file.originalname}`;
 
@@ -13,6 +21,7 @@ async function uploadFile(file, asset_id, public_id) {
     .from(bucket)
     .upload(filePath, file.buffer, {
       contentType: file.mimetype,
+      upsert: false,
     });
 
   if (error) throw error;
@@ -22,7 +31,7 @@ async function uploadFile(file, asset_id, public_id) {
     public_id,
     bucket,
     file_path: filePath,
-    file_type: file.mimetype.startsWith("image/") ? "image" : "document",
+    file_type: fileType,
     mime_type: file.mimetype,
     original_name: file.originalname,
   });
@@ -56,7 +65,7 @@ exports.create = async (req, res, next) => {
       !model_number ||
       !purchase_date ||
       !purchase_cost ||
-      // !vendor ||
+      !vendor ||
       !status ||
       !location ||
       !warranty_expiry
@@ -80,8 +89,8 @@ exports.create = async (req, res, next) => {
       subcategory,
       serial_number,
       model_number,
-      purchase_date: purchase_date ? new Date(purchase_date) : null,
-      purchase_cost: purchase_cost ? Number(purchase_cost) : null,
+      purchase_date: purchase_date || null,
+      purchase_cost: purchase_cost || null,
       vendor,
       status,
       location,
@@ -120,7 +129,7 @@ exports.list = async (req, res, next) => {
   try {
     const filters = {
       search: req.query.search,
-      category: req.query.category, // id 
+      category: req.query.category, // id
       subcategory: req.query.subcategory, // id
       vendor: req.query.vendor, // id array
       status: req.query.status,
@@ -153,11 +162,15 @@ exports.list = async (req, res, next) => {
 
 exports.getOne = async (req, res, next) => {
   try {
-    const asset = await assetModel.getAssetById(req.params.id);
+    const { public_id } = req.params;
+    // console.log("param:", req.params);
+    // console.log("type:", typeof req.params.public_id);
+    const asset = await assetModel.getAssetById(public_id);
     if (!asset) return res.status(404).json({ error: "Asset not found" });
-    const public_id = asset.public_id;
-    const files = await assetModel.getFilesByAssetId(public_id);
-    if (!files) return res.status(404).json({ error: "Failed to fetch asset files" });
+    const {asset_id} = asset;
+    const files = await assetModel.getFilesByAssetId(asset_id);
+    if (!files)
+      return res.status(404).json({ error: "Failed to fetch asset files" });
     // ASSET_MANAGER and USER can access assets from their department AND unassigned assets
     const userRole = req.user.role.toUpperCase();
     if (userRole === "ASSET_MANAGER" || userRole === "USER") {
@@ -173,11 +186,11 @@ exports.getOne = async (req, res, next) => {
         });
       }
     }
-    
+
     // res.json(asset);
     res.json({
       asset,
-      files
+      files,
     });
   } catch (err) {
     next(err);
@@ -199,10 +212,11 @@ exports.update = async (req, res, next) => {
         });
       }
     }
+    const { public_id } = req.params;
 
-    const updated = await assetModel.updateAsset(req.params.id, req.body);
+    const updated = await assetModel.updateAsset(public_id, req.body);
 
-    const { asset_id, public_id } = updated;
+    const { asset_id } = updated;
 
     // Handle images
     if (req.files?.images?.length) {
@@ -226,11 +240,13 @@ exports.update = async (req, res, next) => {
 
 exports.remove = async (req, res, next) => {
   try {
-    const asset_id = req.params.id;
+    const { public_id } = req.params.id;
 
     // ASSET_MANAGER can only delete assets from their department (not unassigned assets)
     if (req.user.role.toUpperCase() === "ASSET_MANAGER") {
-      const assetDepartmentId = await assetModel.getAssetDepartmentId(asset_id);
+      const assetDepartmentId = await assetModel.getAssetDepartmentId(
+        public_id
+      );
       // Block if asset is unassigned (null) OR belongs to different department
       if (!assetDepartmentId || assetDepartmentId !== req.user.department_id) {
         return res.status(403).json({
@@ -239,7 +255,7 @@ exports.remove = async (req, res, next) => {
         });
       }
     }
-
+    const {asset_id} = assetModel.getId(public_id);
     const files = await assetModel.getFilesByAssetId(asset_id);
 
     for (const file of files) {
@@ -258,7 +274,6 @@ exports.remove = async (req, res, next) => {
   }
 };
 
-
 exports.getAssetFile = async (req, res, next) => {
   try {
     const { fileId } = req.params;
@@ -270,7 +285,7 @@ exports.getAssetFile = async (req, res, next) => {
     if (!file) {
       return res.status(404).json({ error: "File not found" });
     }
-    
+
     // Role-based access control for file downloads
     // ADMIN: Can download any file
     // ASSET_MANAGER / USER: Can download files from assets in their department OR unassigned assets
@@ -284,20 +299,20 @@ exports.getAssetFile = async (req, res, next) => {
       ) {
         return res.status(403).json({
           error:
-          "Access denied: Cannot download files from assets outside your department",
+            "Access denied: Cannot download files from assets outside your department",
         });
       }
     }
-    
+
     // Retrieve the file from Supabase storage
     const { data, error } = await supabase.storage
-    .from(file.bucket)
-    .download(file.file_path);
-    
+      .from(file.bucket)
+      .download(file.file_path);
+
     if (error || !data) {
       return res.status(500).json({ error: "Failed to download file." });
     }
-    
+
     // Set headers
     res.setHeader(
       "Cache-Control",
@@ -305,16 +320,14 @@ exports.getAssetFile = async (req, res, next) => {
     );
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
-    
+
     // Content headers
     res.setHeader("Content-Type", file.mime_type);
     res.setHeader(
       "Content-Disposition",
-      isDownload
-      ? `attachment; filename="${file.original_name}"`
-      : "inline"
+      isDownload ? `attachment; filename="${file.original_name}"` : "inline"
     );
-    
+
     // Pipe the readable stream or buffer to the response
     if (typeof data.pipe === "function") {
       data.pipe(res);

@@ -20,7 +20,7 @@ export default function Vendors(){
 
   useEffect(() => {
     API.get("/vendors")
-      .then(res => setVendors(res.data))
+      .then(res => setVendors(res.data.vendors))
       .catch(() => alert("Failed to load vendors"));
   }, []);
 

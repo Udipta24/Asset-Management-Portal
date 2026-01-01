@@ -13,6 +13,7 @@ const subcategoryRoutes = require("./routes/subcategoryRouter");
 const departmentRoutes = require("./routes/departmentRouter");
 const designationRoutes = require("./routes/designationRouter");
 const locationRoutes = require("./routes/locationRouter");
+const vendorRoutes = require("./routes/vendorRouter");
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use("/api/subcategories", subcategoryRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/designations", designationRoutes);
 app.use("/api/locations", locationRoutes);
+app.use("/api/vendors", vendorRoutes);
 
 app.use(errorHandler);
 

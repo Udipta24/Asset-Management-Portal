@@ -6,9 +6,7 @@ const {
     deleteVendor,
   } = require("../models/vendorModel");
   
-  /**
-   * Create vendor
-   */
+  // Create vendor
   exports.createVendor = async (req, res, next) => {
     try {
       const vendor = await createVendor(req.body);
@@ -20,11 +18,9 @@ const {
       next(err);
     }
   };
-  
-  /**
-   * Get all vendors
-   */
-  exports.getVendors = async (req, res, next) => {
+ 
+  // Get all vendors
+exports.getVendors = async (req, res, next) => {
     try {
       const vendors = await getAllVendors();
       res.json({ vendors });
@@ -33,9 +29,7 @@ const {
     }
   };
   
-  /**
-   * Get vendor by ID
-   */
+  // Get vendor by ID
   exports.getVendorById = async (req, res, next) => {
     try {
       const vendor = await getVendorById(req.params.vendorId);
@@ -50,9 +44,7 @@ const {
     }
   };
   
-  /**
-   * Update vendor
-   */
+  //  * Update vendor
   exports.updateVendor = async (req, res, next) => {
     try {
       const updated = await updateVendor(
@@ -73,9 +65,7 @@ const {
     }
   };
   
-  /**
-   * Delete vendor
-   */
+  //  * Delete vendor
   exports.deleteVendor = async (req, res, next) => {
     try {
       const deleted = await deleteVendor(req.params.vendorId);

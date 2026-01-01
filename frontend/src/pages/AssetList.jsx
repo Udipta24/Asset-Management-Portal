@@ -26,20 +26,11 @@ export default function AssetsList() {
     purchase_date_to: "",
   });
   const navigate = useNavigate();
-
-  // Example static data – ideally fetch from backend
-  // const categories = ["Electronics", "Furniture", "Networking"];
-  // const subcategories = {
-  //   Electronics: ["Laptop", "Desktop", "Monitor"],
-  //   Furniture: ["Chair", "Table"],
-  //   Networking: ["Router", "Switch"],
-  // };
-  // const vendors = ["Dell", "HP", "Lenovo", "Cisco"];
   const { fetchProtectedReferenceData } = useReferenceData();
   useEffect(() => {
     fetchProtectedReferenceData();
   }, []);
-  const { categories, subcategories, /*vendors, */ loadingProtected } =
+  const { categories, subcategories, vendors, loadingProtected } =
     useReferenceData();
 
   const fetchAssets = async () => {
@@ -233,10 +224,14 @@ export default function AssetsList() {
           </div>
 
           {/* Vendor */}
-          {/* <div className="p-4 rounded-xl border space-y-2
+          <div
+            className="p-4 rounded-xl border space-y-2
   bg-white border-slate-200
-  dark:bg-slate-900 dark:border-white/10">
-            <label className="font-semibold text-slate-700 dark:text-slate-200">Vendor</label>
+  dark:bg-slate-900 dark:border-white/10"
+          >
+            <label className="font-semibold text-slate-700 dark:text-slate-200">
+              Vendor
+            </label>
             {vendors.map((vendor) => (
               <label
                 key={vendor.vendor_id}
@@ -257,7 +252,7 @@ export default function AssetsList() {
                 <span className="text-sm">{vendor.vendor_name}</span>
               </label>
             ))}
-          </div> */}
+          </div>
 
           {/* Warranty */}
           <div

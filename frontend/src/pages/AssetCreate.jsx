@@ -51,8 +51,9 @@ export default function AssetCreate() {
   useEffect(() => {
     fetchProtectedReferenceData();
   }, []);
-  const { categories, subcategories, /*vendors, */ loadingProtected } =
+  const { categories, subcategories, vendors, loadingProtected } =
     useReferenceData();
+  // console.log(vendors);
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -172,7 +173,7 @@ export default function AssetCreate() {
             className={`border p-2 rounded
              bg-white dark:bg-slate-800
              ${
-               form.category === ""
+               form.category === null
                  ? "text-slate-400"
                  : "text-black dark:text-white"
              }
@@ -199,7 +200,7 @@ export default function AssetCreate() {
             className={`border p-2 rounded
              bg-white dark:bg-slate-800
              ${
-               form.subcategory === ""
+               form.subcategory === null
                  ? "text-slate-400"
                  : "text-black dark:text-white"
              }
@@ -293,7 +294,7 @@ export default function AssetCreate() {
         </div>
 
         {/* Vendor */}
-        {/* <div className="col-span-2 flex flex-col">
+        <div className="flex flex-col">
           <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
             Vendor
           </label>
@@ -317,7 +318,7 @@ export default function AssetCreate() {
               </option>
             ))}
           </select>
-        </div> */}
+        </div>
 
         {/* Warrantry expiry */}
         <div className="flex flex-col">
