@@ -5,6 +5,7 @@ import { MdLogout, MdLightMode, MdDarkMode } from 'react-icons/md';
 import { FaUserCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import logo from "../assets/bg1.png";
 
 export default function Topbar() {
   const navigate = useNavigate();
@@ -36,12 +37,13 @@ export default function Topbar() {
 
       {/* Left */}
       <div className="relative z-10 flex items-center gap-3">
-        <div className="p-1.5 bg-blue-100 dark:bg-cyan-500/10 rounded-lg border border-blue-200 dark:border-cyan-500/30 transition-colors duration-300">
+        {/* <div className="p-1.5 bg-blue-100 dark:bg-cyan-500/10 rounded-lg border border-blue-200 dark:border-cyan-500/30 transition-colors duration-300">
           <FaUserCircle
             className="text-blue-600 dark:text-cyan-400 transition-colors duration-300"
             size={20}
           />
-        </div>
+        </div> */}
+        <img src={logo} alt="Logo" className="h-10 w-auto rounded-lg" />
         <h1 className="text-lg font-bold tracking-wider">
           ASSET MANAGEMENT{' '}
           <span className="text-blue-600 dark:text-cyan-400">PORTAL</span>

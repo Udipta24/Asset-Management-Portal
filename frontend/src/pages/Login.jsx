@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import API from '../api/api';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import loginBg from '../assets/login-bg.png';
+import loginBg from '../assets/signup-bg.png';
 import { useAuth } from '../context/AuthContext';
-//trim the username or else it will try to compare "jit   " with "jit" , one has gaps and another has no gaps
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -81,8 +80,8 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="flex justify-between items-center pt-2">
-            <div className="flex items-center">
+          <div className="flex justify-end items-center">
+            {/* <div className="flex items-center">
               <input
                 type="checkbox"
                 id="remember"
@@ -93,7 +92,7 @@ export default function Login() {
                 className="ml-2 text-xs text-blue-100/80 cursor-pointer">
                 Remember me
               </label>
-            </div>
+            </div> */}
             <Link
               to="/forget-password"
               className="text-blue-300 hover:text-white text-xs font-medium transition-colors duration-200">
@@ -124,14 +123,13 @@ export default function Login() {
                 Authenticating...
               </span>
             ) : (
-              'Sign In'
+              'Log In'
             )}
           </button>
         </form>
 
         <div className="mt-8 text-center pt-6 border-t border-white/10">
-          <p className="text-gray-400 text-sm">Access Restricted Area</p>
-          <div className="mt-2 text-xs text-slate-500">
+          <div className="mt-2 text-xs text-slate-400">
             Don’t have an account?{' '}
             <Link
               to="/signup"

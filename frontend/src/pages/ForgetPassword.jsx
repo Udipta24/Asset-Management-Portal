@@ -40,7 +40,7 @@ export default function ForgetPassword() {
     <div
       className="min-h-screen flex items-center justify-center relative bg-cover bg-center bg-no-repeat"
       style={{
-        backgroundImage: `url('/src/assets/login-bg.png')`,
+        backgroundImage: `url('/src/assets/signup-bg.png')`,
       }}>
       {/* Dark Overlay for readability */}
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>

@@ -13,45 +13,52 @@ import { FaUsersRectangle } from "react-icons/fa6";
 import { MdCategory, MdOutlineCategory, MdBuild } from "react-icons/md";
 import { PiOfficeChairFill } from "react-icons/pi";
 import { HiMiniBuildingOffice } from "react-icons/hi2";
+import { IoMdAddCircle } from "react-icons/io";
+import { MdFormatListBulletedAdd } from "react-icons/md";
 import API from "../api/api";
+import { useAuth } from "../context/AuthContext";
 
 const SidebarItem = ({ label, icon: Icon, collapsed, to }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
       `flex items-center gap-3 px-4 py-3 cursor-pointer text-sm font-medium transition-all duration-300
-       ${isActive
-        ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-400"
-        : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
-      }`
+       ${
+         isActive
+           ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600 dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-400"
+           : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+       }`
     }
   >
-    <Icon size={20} className={({ isActive }) => (isActive ? "drop-shadow-sm dark:drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]" : "")} />
+    <Icon
+      size={20}
+      className={({ isActive }) =>
+        isActive
+          ? "drop-shadow-sm dark:drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]"
+          : ""
+      }
+    />
     {!collapsed && <span className="tracking-wide">{label}</span>}
   </NavLink>
 );
 
 export default function Sidebar({ collapsed, setCollapsed }) {
-  const [user, setUser] = useState({});
-
-  useEffect(() => {
-    const fetchMe = async () => {
-      try {
-      const res = await API.get("/user/me");
-        setUser(res.data.user);
-      } catch (e) {
-        console.error("Failed to fetch user", e);
-      }
-    };
-    fetchMe();
-  }, []);
-  console.log("Userdata", user);
-  const user_role = user.role;
+  const { currentUser, loading } = useAuth();
+  if(loading) return (
+    <aside
+      className={`bg-white dark:bg-slate-900/95 backdrop-blur-xl border-r border-slate-200 dark:border-white/10 text-slate-800 dark:text-white flex flex-col transition-all duration-300 z-20 ${
+        collapsed ? "w-16" : "w-64"
+      }`}
+    >Loading...</aside>
+  );
+  console.log("Userdata", currentUser);
+  const user_role = currentUser.role;
   console.log("User role", user_role);
   return (
     <aside
-      className={`bg-white dark:bg-slate-900/95 backdrop-blur-xl border-r border-slate-200 dark:border-white/10 text-slate-800 dark:text-white flex flex-col transition-all duration-300 z-20 ${collapsed ? "w-16" : "w-64"
-        }`}
+      className={`bg-white dark:bg-slate-900/95 backdrop-blur-xl border-r border-slate-200 dark:border-white/10 text-slate-800 dark:text-white flex flex-col transition-all duration-300 z-20 ${
+        collapsed ? "w-16" : "w-64"
+      }`}
     >
       {/* Sidebar content */}
       <div className="flex-1 overflow-y-auto py-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
@@ -75,14 +82,14 @@ export default function Sidebar({ collapsed, setCollapsed }) {
               collapsed={collapsed}
               to="/create-asset"
             />
-            <SidebarItem
-              label="Vendors"
-              icon={FaIndustry}
-              collapsed={collapsed}
-              to="/vendors"
-            />
           </>
         )}
+        <SidebarItem
+          label="Vendors"
+          icon={FaIndustry}
+          collapsed={collapsed}
+          to="/vendors"
+        />
         <SidebarItem
           label="Asset Locations"
           icon={FaMapMarkerAlt}
@@ -131,6 +138,13 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           collapsed={collapsed}
           to="/maintenance"
         />
+        <SidebarItem
+          label="Request Service"
+          icon={IoMdAddCircle}
+          collapsed={collapsed}
+          to="/request/create"
+        />
+
       </div>
 
       {/* Footer toggle */}
@@ -144,7 +158,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           ) : (
             <FaChevronLeft className="text-blue-500 dark:text-cyan-400 group-hover:-translate-x-1 transition-transform" />
           )}
-          {!collapsed && <span className="text-xs font-semibold text-slate-500 dark:text-cyan-100 uppercase tracking-widest">Collapse</span>}
+          {!collapsed && (
+            <span className="text-xs font-semibold text-slate-500 dark:text-cyan-100 uppercase tracking-widest">
+              Collapse
+            </span>
+          )}
         </button>
       </div>
     </aside>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import API from "../api/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
-import loginBg from '../assets/login-bg.png';
+import loginBg from '../assets/signup-bg.png';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -67,14 +67,14 @@ export default function ResetPassword() {
               <input
                 type="password"
                 className="w-full bg-slate-900/40 border border-white/10 text-white p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent placeholder-gray-400/70 transition-all duration-300 hover:bg-slate-900/60 shadow-inner backdrop-blur-sm"
-                placeholder="••••••••"
+                placeholder="••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
             <p className="text-xs text-blue-200/60 ml-1">
-              Must be at least 8 characters long.
+              Must be at least 6 characters long.
             </p>
           </div>
 

@@ -274,7 +274,7 @@ exports.updatePasswordByEmail = async (email, passwordHash) => {
 
 // Promote a USER to ASSET_MANAGER
 // Enforces: Only one ASSET_MANAGER per department (database constraint)
-exports.promoteToAssetManager = async (user_id, department_id) => {
+exports.promote = async (user_id, department_id, role) => {
   try {
     await db.query("BEGIN");
 
@@ -301,29 +301,27 @@ exports.promoteToAssetManager = async (user_id, department_id) => {
              FROM users_data u
              JOIN user_roles ur ON u.user_id = ur.user_id
              JOIN roles r ON ur.role_id = r.role_id
-             WHERE u.department_id = $1 AND r.role_name = 'ASSET_MANAGER'`,
-      [department_id]
+             WHERE u.department_id = $1 AND r.role_name = $2`,
+      [department_id, role]
     );
 
     if (
       existingManager.rows.length > 0 &&
       existingManager.rows[0].user_id !== user_id
     ) {
-      throw new Error("This department already has an ASSET_MANAGER");
+      throw new Error(`This department already has an ${role}}`);
     }
 
     // Get ASSET_MANAGER role_id
-    const assetManagerRoleId = await getIdByName(
+    const roleId = await getIdByName(
       "roles",
       "role_name",
-      "ASSET MANAGER"
+      role.toUpperCase()
     );
-    if (!assetManagerRoleId) {
-      throw new Error("ASSET MANAGER role not found in database");
+    if (!roleId) {
+      throw new Error(`${role} role not found in database`);
     }
 
-    // Update user role from USER to ASSET_MANAGER
-    // First, get current USER role_id
     const userRoleId = await getIdByName("roles", "role_name", "USER");
 
     // Delete old USER role
@@ -335,7 +333,7 @@ exports.promoteToAssetManager = async (user_id, department_id) => {
     // Insert new ASSET_MANAGER role
     await db.query(
       "INSERT INTO user_roles (user_id, role_id) VALUES ($1, $2)",
-      [user_id, assetManagerRoleId]
+      [user_id, roleId]
     );
 
     await db.query("COMMIT");

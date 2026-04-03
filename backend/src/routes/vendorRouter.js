@@ -17,7 +17,7 @@ router.post(
   vendorController.createVendor
 );
 
-router.put(
+router.patch(
   "/:vendorId",
   authenticate,
   authorize("admin", "asset manager"),

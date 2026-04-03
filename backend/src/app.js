@@ -14,6 +14,7 @@ const departmentRoutes = require("./routes/departmentRouter");
 const designationRoutes = require("./routes/designationRouter");
 const locationRoutes = require("./routes/locationRouter");
 const vendorRoutes = require("./routes/vendorRouter");
+const maintenanceRoutes = require("./routes/maintenanceRouter");
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/designations", designationRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/vendors", vendorRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
 
 app.use(errorHandler);
 

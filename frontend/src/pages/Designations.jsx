@@ -48,6 +48,44 @@ export default function Designations() {
       <h1 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">
         Designations
       </h1>
+      <div className="bg-slate-50 dark:bg-slate-800/60 p-4 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 grid grid-cols-8 gap-4 items-end mb-4">
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-white col-span-8">
+          Add Designation
+        </h2>
+        <input
+          className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors col-span-3"
+          placeholder="Designation Name"
+          value={newDesignation.designation_name}
+          onChange={(e) =>
+            setNewDesignation({ ...newDesignation, designation_name: e.target.value })
+          }
+        />
+
+        <input
+          className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors col-span-4"
+          placeholder="Description (optional)"
+          value={newDesignation.description}
+          onChange={(e) =>
+            setNewDesignation({ ...newDesignation, description: e.target.value })
+          }
+        />
+
+        <div className="flex justify-center">
+          <button
+            onClick={addDesignation}
+            className="p-2 rounded-lg text-green-600 hover:bg-green-100
+                  dark:text-green-400 dark:hover:bg-green-500/10 transition"
+          >
+            <FaPlus />
+          </button>
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 ">
         <table className="w-full border-collapse">
@@ -159,59 +197,6 @@ export default function Designations() {
                 </td>
               </tr>
             ))}
-
-            {/* ADD DESIGNATION ROW */}
-            <tr
-              className="bg-slate-50
-  dark:bg-slate-800/60"
-            >
-              <td colSpan={2} className="px-4 py-2">
-                <input
-                  className="w-full bg-transparent border-b px-2 py-1 outline-none
-    text-slate-800 border-slate-300 focus:border-green-500
-    dark:text-white dark:border-white/20 dark:focus:border-green-400
-    transition-colors"
-                  placeholder="Designation Name"
-                  value={newDesignation.designation_name}
-                  onChange={(e) =>
-                    setNewDesignation({
-                      ...newDesignation,
-                      designation_name: e.target.value,
-                    })
-                  }
-                />
-              </td>
-
-              <td colSpan={2} className="px-4 py-2">
-                <input
-                  className="w-full bg-transparent border-b px-2 py-1 outline-none
-    text-slate-800 border-slate-300 focus:border-green-500
-    dark:text-white dark:border-white/20 dark:focus:border-green-400
-    transition-colors"
-                  placeholder="Description (optional)"
-                  value={newDesignation.description}
-                  onChange={(e) =>
-                    setNewDesignation({
-                      ...newDesignation,
-                      description: e.target.value,
-                    })
-                  }
-                />
-              </td>
-
-              <td className="px-4 py-2 text-center">
-                <button
-                  onClick={addDesignation}
-                  className="p-2 rounded-lg
-    text-green-600
-    hover:bg-green-100
-    dark:text-green-400 dark:hover:bg-green-500/10
-    transition"
-                >
-                  <FaPlus />
-                </button>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>

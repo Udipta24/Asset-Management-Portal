@@ -77,7 +77,7 @@ export default function Signup() {
       {/* Dark Overlay with a hint of tech-blue */}
       <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
 
-      <div className="relative z-10 bg-slate-900/60 backdrop-blur-3xl p-8 md:p-10 w-full max-w-4xl rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/5">
+      <div className="relative z-10 bg-white/10 backdrop-blur-2xl p-8 md:p-10 w-full max-w-4xl rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/5">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
             Asset Management Portal

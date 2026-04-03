@@ -120,7 +120,7 @@ export default function UserProfile() {
     // Simulation of a reset flow
     Swal.fire({
       title: 'Reset Password?',
-      text: "This will trigger a secure password reset for this user.",
+      text: "This will trigger a secure password reset and you will be logged out automatically.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Yes, reset it!',
@@ -129,14 +129,16 @@ export default function UserProfile() {
       confirmButtonColor: theme === 'dark' ? '#06b6d4' : '#2563eb'
     }).then((result) => {
       if (result.isConfirmed) {
-        Swal.fire({
-          title: 'Success!',
-          text: 'Password reset link has been sent to the user email.',
-          icon: 'success',
-          background: theme === 'dark' ? '#1e293b' : '#fff',
-          color: theme === 'dark' ? '#fff' : '#0f172a',
-          confirmButtonColor: theme === 'dark' ? '#06b6d4' : '#2563eb'
-        });
+        API.post("/auth/logout");
+        navigate("/forget-password");
+        // Swal.fire({
+        //   title: 'Success!',
+        //   text: 'Password reset link has been sent to the user email.',
+        //   icon: 'success',
+        //   background: theme === 'dark' ? '#1e293b' : '#fff',
+        //   color: theme === 'dark' ? '#fff' : '#0f172a',
+        //   confirmButtonColor: theme === 'dark' ? '#06b6d4' : '#2563eb'
+        // });
       }
     });
   };
@@ -167,11 +169,11 @@ export default function UserProfile() {
               }`}>
               {user.name.charAt(0)}
             </div>
-            {editMode && (
+            {/* {editMode && (
               <button className="absolute bottom-0 right-0 p-2.5 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-500 transition-colors">
                 <FaCamera size={14} />
               </button>
-            )}
+            )} */}
           </div>
 
           {/* Text Info */}

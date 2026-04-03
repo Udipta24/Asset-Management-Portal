@@ -25,7 +25,6 @@ function MapClickHandler({ onPick }) {
 export default function AssetEdit() {
   const url = import.meta.env.VITE_API_URL;
   const { id } = useParams(); // public_id
-  console.log(id);
   const navigate = useNavigate();
 
   const [asset, setAsset] = useState(null);
@@ -69,7 +68,7 @@ export default function AssetEdit() {
         setLoading(false);
       }
     };
-
+    console.log(id);
     fetchAsset();
   }, [id]);
 
@@ -107,9 +106,8 @@ export default function AssetEdit() {
   };
 
   useEffect(() => {
+    let urls = {};
     const loadImages = async () => {
-      const urls = {};
-
       for (const img of imageFiles) {
         try {
           urls[img.file_id] = await loadImageBlob(img.file_id);
@@ -125,20 +123,20 @@ export default function AssetEdit() {
 
     return () => {
       // cleanup blob URLs
-      Object.values(imageUrls).forEach(URL.revokeObjectURL);
+      Object.values(urls).forEach(URL.revokeObjectURL);
     };
   }, [imageFiles]);
 
   const previewFile = (fileId) => {
     window.open(
-      `${url}/files/${fileId}?intent=view`,
+      `${url}/assets/files/${fileId}?intent=view`,
       "_blank",
       "noopener,noreferrer"
     );
   };
   const deleteFile = async (fileId) => {
     try {
-      const res = await API.delete(`/files/${fileId}`);
+      const res = await API.delete(`assets/files/${fileId}`);
       setFiles((prev) => prev.filter((f) => f.file_id !== fileId));
 
       Swal.fire({
@@ -187,16 +185,48 @@ export default function AssetEdit() {
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const body = {
-        status: form.status,
-        assigned_to: form.assigned_to || undefined,
-        warranty_expiry: form.warranty_expiry || undefined,
-        description: form.description || undefined,
-        ...location,
-      };
 
-      await API.patch(`/assets/${asset.public_id}`, body);
+    try {
+      if (imageFiles.length + images.length > 5) {
+        Swal.fire({
+          icon: "warning",
+          text: "Maximum 5 images allowed per asset",
+        });
+        return;
+      }
+
+      if (docFiles.length + documents.length > 5) {
+        Swal.fire({
+          icon: "warning",
+          text: "Maximum 5 documents allowed per asset",
+        });
+        return;
+      }
+
+      const formData = new FormData();
+
+      // -------- editable fields --------
+      if (form.status) formData.append("status", form.status);
+      if (form.assigned_to) formData.append("assigned_to", form.assigned_to);
+      if (form.warranty_expiry)
+        formData.append("warranty_expiry", form.warranty_expiry);
+      if (form.description) formData.append("description", form.description);
+
+      // -------- location --------
+      formData.append("location", JSON.stringify(location));
+
+      // -------- images --------
+      images.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      // -------- documents --------
+      documents.forEach((file) => {
+        formData.append("documents", file);
+      });
+
+      await API.patch(`/assets/${asset.public_id}`, formData);
+
       Swal.fire({
         title: "Asset details updated successfully",
         text: `Asset ID is : ${asset.public_id}`,
@@ -237,7 +267,7 @@ export default function AssetEdit() {
           <input
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             placeholder="Asset Name"
             value={asset.asset_name}
@@ -252,7 +282,7 @@ export default function AssetEdit() {
           <input
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             value={asset.category_name}
             disabled
@@ -266,7 +296,7 @@ export default function AssetEdit() {
           <input
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             value={asset.subcategory_name}
             disabled
@@ -280,7 +310,7 @@ export default function AssetEdit() {
           <input
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             placeholder="Model Number"
             value={asset.model_number}
@@ -295,7 +325,7 @@ export default function AssetEdit() {
           <input
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             placeholder="Serial Number"
             value={asset.serial_number}
@@ -311,7 +341,7 @@ export default function AssetEdit() {
             type="date"
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             value={asset.purchase_date}
             disabled
@@ -326,7 +356,7 @@ export default function AssetEdit() {
             type="number"
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             placeholder="Purchase Cost"
             value={asset.purchase_cost}
@@ -341,7 +371,7 @@ export default function AssetEdit() {
           <input
             className="border p-2 rounded
              bg-white dark:bg-slate-800
-             text-black dark:text-white
+             text-slate-500
              border-gray-300 dark:border-slate-700"
             placeholder="Vendor"
             value={asset.vendor_name}
@@ -394,7 +424,7 @@ export default function AssetEdit() {
           >
             <option value="active">Active</option>
             <option value="in-repair">In Repair</option>
-            <option value="retired">Retired</option>
+            <option value="inactive">Inactive</option>
           </select>
         </div>
 
@@ -417,7 +447,10 @@ export default function AssetEdit() {
         {showMap && (
           <div className="md:col-span-2">
             <MapContainer
-              center={[23.8315, 91.2868]}
+              center={[
+                location.latitude || 23.8315,
+                location.longitude || 91.2868,
+              ]}
               zoom={12}
               className="h-80 w-full rounded"
             >
@@ -456,26 +489,31 @@ export default function AssetEdit() {
              text-black dark:text-white
              border-gray-300 dark:border-slate-700"
           >
-            <h2 className="text-lg font-medium mb-2 text-black dark:text-white">
+            <h2 className="text-lg font-medium text-slate-800 dark:text-slate-100 mb-2">
               Asset Images
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {imageFiles.map((img) => (
                 <div
                   key={img.file_id}
-                  className="border rounded overflow-hidden cursor-pointer hover:shadow"
+                  className="border border-slate-200 dark:border-white/10
+            rounded-xl overflow-hidden cursor-pointer
+            transition hover:shadow-md hover:-translate-y-0.5"
                   onClick={() => previewFile(img.file_id)}
                 >
                   <img
                     src={imageUrls[img.file_id]}
                     alt={img.original_name}
-                    className="h-40 w-40 object-cover rounded"
+                    className="h-40 w-full object-cover"
                   />
-                  <div className="flex justify-between items-center p-2 text-xs">
-                    <span className="truncate text-black dark:text-white">
+                  <div className="flex justify-between items-center p-2 text-xs
+              bg-slate-50 dark:bg-slate-800
+              text-slate-600 dark:text-slate-300">
+                    <span className="truncate">
                       {img.original_name}
                     </span>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteFile(img.file_id);
@@ -499,21 +537,26 @@ export default function AssetEdit() {
              text-black dark:text-white
              border-gray-300 dark:border-slate-700"
           >
-            <h2 className="text-lg font-medium mb-2 text-black dark:text-white">
+            <h2 className="text-lg font-medium text-slate-800 dark:text-slate-100 mb-2">
               Documents
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {docFiles.map((doc) => (
                 <div
                   key={doc.file_id}
-                  className="border rounded p-4 flex flex-col items-center gap-2 cursor-pointer hover:bg-gray-50"
+                  className="border border-slate-200 dark:border-white/10
+            rounded-xl p-4
+            flex flex-col items-center gap-2
+            cursor-pointer transition
+            hover:bg-slate-50 dark:hover:bg-slate-800"
                   onClick={() => previewFile(doc.file_id)}
                 >
-                  <FiFileText size={32} className="text-red-600" />
-                  <span className="text-xs text-center break-all text-black dark:text-white">
+                  <FiFileText size={32} className="text-red-600 dark:text-red-400" />
+                  <span className="text-xs text-center break-all text-slate-700 dark:text-slate-300">
                     {doc.original_name}
                   </span>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteFile(doc.file_id);
@@ -523,7 +566,7 @@ export default function AssetEdit() {
       dark:text-red-400 dark:hover:bg-red-500/10
       transition"
                   >
-                    <Imbin /> Delete
+                    <ImBin /> Delete
                   </button>
                 </div>
               ))}
@@ -537,7 +580,8 @@ export default function AssetEdit() {
           setDocuments={setDocuments}
         />
 
-        <button className="col-span-2 bg-blue-600 text-white p-2 rounded mt-4">
+        <button type="submit" className="md:col-span-2 bg-blue-600 text-white p-2 rounded mt-4 hover:bg-blue-700 hover:shadow-md
+    active:scale-95">
           {loading ? "Processing..." : "Edit Asset Details"}
         </button>
       </form>

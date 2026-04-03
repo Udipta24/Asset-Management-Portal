@@ -46,8 +46,52 @@ export default function Categories() {
   return (
     <div className="p-6 max-w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
       <h1 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">
-        Categories
+        Asset Categories
       </h1>
+      <div className="bg-slate-50 dark:bg-slate-800/60 p-4 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 grid grid-cols-8 gap-4 items-end mb-4">
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-white col-span-8">
+          Add Category
+        </h2>
+        <input
+          className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors col-span-3"
+          placeholder="Category Name"
+          value={newCategory.category_name}
+          onChange={(e) =>
+            setNewCategory({
+              ...newCategory,
+              category_name: e.target.value,
+            })
+          }
+        />
+
+        <input
+          className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors col-span-4"
+          placeholder="Description (optional)"
+          value={newCategory.description}
+          onChange={(e) =>
+            setNewCategory({
+              ...newCategory,
+              description: e.target.value,
+            })
+          }
+        />
+
+        <div className="flex justify-center">
+          <button
+            onClick={addCategory}
+            className="p-2 rounded-lg text-green-600 hover:bg-green-100
+                  dark:text-green-400 dark:hover:bg-green-500/10 transition"
+          >
+            <FaPlus />
+          </button>
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 ">
         <table className="w-full border-collapse">
@@ -159,59 +203,6 @@ export default function Categories() {
                 </td>
               </tr>
             ))}
-
-            {/* ADD CATEGORY ROW */}
-            <tr
-              className="bg-slate-50
-  dark:bg-slate-800/60"
-            >
-              <td colSpan={2} className="px-4 py-2">
-                <input
-                  className="w-full bg-transparent border-b px-2 py-1 outline-none
-    text-slate-800 border-slate-300 focus:border-green-500
-    dark:text-white dark:border-white/20 dark:focus:border-green-400
-    transition-colors"
-                  placeholder="Category Name"
-                  value={newCategory.category_name}
-                  onChange={(e) =>
-                    setNewCategory({
-                      ...newCategory,
-                      category_name: e.target.value,
-                    })
-                  }
-                />
-              </td>
-
-              <td colSpan={2} className="px-4 py-2">
-                <input
-                  className="w-full bg-transparent border-b px-2 py-1 outline-none
-    text-slate-800 border-slate-300 focus:border-green-500
-    dark:text-white dark:border-white/20 dark:focus:border-green-400
-    transition-colors"
-                  placeholder="Description (optional)"
-                  value={newCategory.description}
-                  onChange={(e) =>
-                    setNewCategory({
-                      ...newCategory,
-                      description: e.target.value,
-                    })
-                  }
-                />
-              </td>
-
-              <td className="px-4 py-2 text-center">
-                <button
-                  onClick={addCategory}
-                  className="p-2 rounded-lg
-    text-green-600
-    hover:bg-green-100
-    dark:text-green-400 dark:hover:bg-green-500/10
-    transition"
-                >
-                  <FaPlus />
-                </button>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>

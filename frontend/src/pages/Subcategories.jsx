@@ -63,11 +63,11 @@ export default function Categories() {
     <div className="p-6 max-w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
       <div className="flex justify-between items-start">
         <h1 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">
-          Subcategories
+          Asset Subcategories
         </h1>
         <select
           className="border rounded px-3 py-2 bg-slate-100 text-slate-700
-    dark:bg-slate-800/60 dark:text-slate-200"
+    dark:bg-slate-800/60 dark:text-slate-200 border-slate-200 dark:border-white/10 shadow-sm"
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
@@ -82,6 +82,51 @@ export default function Categories() {
               </option>
             ))}
         </select>
+      </div>
+
+      <div className="bg-slate-50 dark:bg-slate-800/60 p-4 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 grid grid-cols-8 gap-4 items-end mb-4">
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-white col-span-8">
+          Add Subcategory
+        </h2>
+        <input
+          className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors col-span-3"
+          placeholder="Subcategory Name"
+          value={newSubcategory.subcategory_name}
+          onChange={(e) =>
+            setNewSubcategory({
+              ...newSubcategory,
+              subcategory_name: e.target.value,
+            })
+          }
+        />
+
+        <input
+          className="w-full bg-transparent border-b px-2 py-1 outline-none
+    text-slate-800 border-slate-300 focus:border-green-500
+    dark:text-white dark:border-white/20 dark:focus:border-green-400
+    transition-colors col-span-4"
+          placeholder="Description (optional)"
+          value={newSubcategory.description}
+          onChange={(e) =>
+            setNewSubcategory({
+              ...newSubcategory,
+              description: e.target.value,
+            })
+          }
+        />
+
+        <div className="flex justify-center">
+          <button
+            onClick={addSubcategory}
+            className="p-2 rounded-lg text-green-600 hover:bg-green-100
+                  dark:text-green-400 dark:hover:bg-green-500/10 transition"
+          >
+            <FaPlus />
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
@@ -185,59 +230,6 @@ export default function Categories() {
                   </td>
                 </tr>
               ))}
-
-            {/* ADD CATEGORY ROW */}
-            <tr
-              className="bg-slate-50
-  dark:bg-slate-800/60"
-            >
-              <td colSpan={2} className="px-4 py-2">
-                <input
-                  className="w-full bg-transparent border-b px-2 py-1 outline-none
-    text-slate-800 border-slate-300 focus:border-green-500
-    dark:text-white dark:border-white/20 dark:focus:border-green-400
-    transition-colors"
-                  placeholder="Category Name"
-                  value={newSubcategory.subcategory_name}
-                  onChange={(e) =>
-                    setNewSubcategory({
-                      ...newSubcategory,
-                      subcategory_name: e.target.value,
-                    })
-                  }
-                />
-              </td>
-
-              <td colSpan={2} className="px-4 py-2">
-                <input
-                  className="w-full bg-transparent border-b px-2 py-1 outline-none
-    text-slate-800 border-slate-300 focus:border-green-500
-    dark:text-white dark:border-white/20 dark:focus:border-green-400
-    transition-colors"
-                  placeholder="Description (optional)"
-                  value={newSubcategory.description}
-                  onChange={(e) =>
-                    setNewSubcategory({
-                      ...newSubcategory,
-                      description: e.target.value,
-                    })
-                  }
-                />
-              </td>
-
-              <td className="px-4 py-2 text-center">
-                <button
-                  onClick={addSubcategory}
-                  className="p-2 rounded-lg
-    text-green-600
-    hover:bg-green-100
-    dark:text-green-400 dark:hover:bg-green-500/10
-    transition"
-                >
-                  <FaPlus />
-                </button>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>

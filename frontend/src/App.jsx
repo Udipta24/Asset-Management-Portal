@@ -22,7 +22,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AssetCreate from "./pages/AssetCreate";
 import AssetDetail from "./pages/AssetDetail";
-import AssetAssign from "./pages/AssetAssign";
+// import AssetAssign from "./pages/AssetAssign";
 import AssetEdit from "./pages/AssetEdit";
 import AssetList from "./pages/AssetList";
 import AssetLocations from "./pages/AssetLocations";
@@ -31,18 +31,15 @@ import Designations from "./pages/Designations";
 import Categories from "./pages/Categories";
 import Subcategories from "./pages/Subcategories";
 
-import MaintenanceLayout from "./pages/maintenance/MaintenanceLayout";
-import MaintenanceList from "./pages/maintenance/MaintenanceList.jsx";
-import MaintenanceCreate from "./pages/maintenance/MaintenanceCreate.jsx";
-import MyMaintenance from "./pages/maintenance/MyMaintenance.jsx";
+import Maintenance from "./pages/Maintenance";
 
 import Vendors from "./pages/Vendors";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile"
 
-import MyRequests from "./pages/MyRequests.jsx";
-import RequestAsset from "./pages/RequestAsset.jsx";
-import AdminRequests from "./pages/AdminRequests.jsx";
+// import AdminRequests from "./pages/AdminRequests.jsx";
+import RequestPage from "./pages/RequestPage";
+import MyRequests from "./pages/MyRequests";
 
 import { ThemeProvider } from "./context/ThemeContext";
 
@@ -90,10 +87,6 @@ function AnimatedRoutes({ setLoading }) {
             </ProtectedRoute>
           }
         >
-          {/* Note: We aren't wrapping these inner routes individually to avoid double transition conflict with the layout,
-                 but if desired, the MainLayout outlet can also be animated. 
-                 For now, we just animate the main auth pages as requested. */}
-
           {/* Dashboard */}
           <Route index element={<Dashboard />} />
 
@@ -109,20 +102,15 @@ function AnimatedRoutes({ setLoading }) {
           <Route path="categories" element={<Categories />} />
           <Route path="subcategories" element={<Subcategories />} />
 
-          <Route path="/maintenance" element={<MaintenanceLayout />}>
-            <Route index element={<Navigate to="all" replace />} />
-            <Route path="all" element={<MaintenanceList />} />
-            <Route path="issue" element={<MaintenanceCreate />} />
-            <Route path="my" element={<MyMaintenance />} />
-          </Route>
+          <Route path="maintenance" element={<Maintenance />} />
+
 
           <Route path="vendors" element={<Vendors />} />
-          <Route path="assets/assign" element={<AssetAssign />} />
-          <Route path="request/create" element={<RequestAsset />} />
-          <Route path="request/my" element={<MyRequests />} />
-          <Route path="request/adminReq" element={<AdminRequests />} />
+          {/* <Route path="assets/assign" element={<AssetAssign />} /> */}
           <Route path="users" element={<Users />} />
           <Route path="users/profile/:publicId" element={<Profile />} />
+          <Route path="request/create" element={<RequestPage />} />
+          <Route path="request/my" element={<MyRequests />} />
 
         </Route>
       </Routes>

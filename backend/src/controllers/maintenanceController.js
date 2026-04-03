@@ -12,10 +12,25 @@ const {
    */
   exports.createMaintenance = async (req, res, next) => {
     try {
-      const record = await createMaintenance({
-        ...req.body,
-        performed_by: req.user.public_id,
-      });
+      const {
+        asset_id,
+        maintenance_type,
+        performed_by,
+        description,
+        cost,
+        maintenance_date,
+        next_due_date,
+      } = req.body;
+      const payload = {
+        asset_id,
+        maintenance_type,
+        performed_by,
+        description,
+        cost,
+        maintenance_date : maintenance_date || null,
+        next_due_date : next_due_date || null,
+      }
+      const record = await createMaintenance(payload);
   
       res.status(201).json({
         message: "Maintenance record created",
@@ -32,7 +47,7 @@ const {
   exports.getAllMaintenance = async (req, res, next) => {
     try {
       const records = await getAllMaintenance();
-      res.json({ records });
+      res.json({ maintenance: records });
     } catch (err) {
       next(err);
     }

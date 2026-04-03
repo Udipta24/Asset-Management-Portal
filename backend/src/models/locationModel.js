@@ -7,27 +7,27 @@ exports.getLocationsByFilters = async (filters) => {
     let idx = 1;
 
     if (filters.suburb) {
-      conditions.push(`suburb = $${idx++}`);
+      conditions.push(`l.suburb = $${idx++}`);
       values.push(filters.suburb);
     }
 
     if (filters.city) {
-      conditions.push(`city = $${idx++}`);
+      conditions.push(`l.city = $${idx++}`);
       values.push(filters.city);
     }
 
     if (filters.district) {
-      conditions.push(`district = $${idx++}`);
+      conditions.push(`l.district = $${idx++}`);
       values.push(filters.district);
     }
 
     if (filters.state) {
-      conditions.push(`state = $${idx++}`);
+      conditions.push(`l.state = $${idx++}`);
       values.push(filters.state);
     }
 
     if (filters.country) {
-      conditions.push(`country = $${idx++}`);
+      conditions.push(`l.country = $${idx++}`);
       values.push(filters.country);
     }
 
@@ -35,8 +35,9 @@ exports.getLocationsByFilters = async (filters) => {
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const query = `
-      SELECT asset_id, latitude, longitude, count(*) OVER() as asset_count
-      FROM locations
+      SELECT a.public_id, l.latitude, l.longitude
+      FROM locations l
+      JOIN assets a ON a.location_id = l.location_id
       ${whereClause}
     `;
 

@@ -93,37 +93,53 @@ export default function AssetCreate() {
   const submit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const body = {
-        asset_name: form.asset_name,
-        category: form.category || null,
-        subcategory: form.subcategory || null,
-        serial_number: form.serial_number || null,
-        model_number: form.model_number || null,
-        purchase_date: form.purchase_date || null,
-        purchase_cost: form.purchase_cost || null,
-        vendor: form.vendor || null,
-        status: form.status || "active",
-        location: location || null,
-        assigned_to: form.assigned_to || null,
-        warranty_expiry: form.warranty_expiry || null,
-        description: form.description || null,
-      };
-      console.log(body);
-      const res = await API.post("/assets", body);
+      const formData = new FormData();
+
+      // ---- TEXT FIELDS ----
+      formData.append("asset_name", form.asset_name);
+      formData.append("category", form.category);
+      formData.append("subcategory", form.subcategory);
+      formData.append("serial_number", form.serial_number);
+      formData.append("model_number", form.model_number);
+      formData.append("purchase_date", form.purchase_date);
+      formData.append("purchase_cost", form.purchase_cost);
+      formData.append("vendor", form.vendor);
+      formData.append("status", form.status);
+      formData.append("assigned_to", form.assigned_to || "NOT ASSIGNED");
+      formData.append("warranty_expiry", form.warranty_expiry);
+      formData.append("description", form.description || "NO DESCRIPTION");
+
+      // location must be stringified
+      formData.append("location", JSON.stringify(location));
+
+      // ---- FILES ----
+      images.forEach((img) => {
+        formData.append("images", img);
+      });
+
+      documents.forEach((doc) => {
+        formData.append("documents", doc);
+      });
+
+      const res = await API.post("/assets", formData);
+
       const public_id = res.data.asset.public_id;
+
       Swal.fire({
         title: "Asset created successfully",
         text: `Asset ID is : ${public_id}`,
         icon: "success",
       });
+
       nav(`/assets/${public_id}`);
     } catch (err) {
       console.error(err);
       Swal.fire({
         icon: "error",
         title: "Sorry",
-        text: err?.response?.data?.message || "Asset creation failed",
+        text: err?.response?.data?.error || "Asset creation failed",
       });
     } finally {
       setLoading(false);
@@ -140,7 +156,7 @@ export default function AssetCreate() {
 
   return (
     <div className="max-w-full bg-white dark:bg-slate-900 p-6 rounded shadow">
-      <h2 className="text-2xl mb-4 font-bold text-orange-600 dark:text-orange-400">
+      <h2 className="text-2xl mb-4 font-bold text-slate-800 dark:text-slate-100">
         Create Asset
       </h2>
 
@@ -433,8 +449,10 @@ export default function AssetCreate() {
           setDocuments={setDocuments}
         />
 
-        <button className="md:col-span-2 bg-blue-600 text-white p-2 rounded mt-4 hover:bg-blue-700 hover:shadow-md
-    active:scale-95">
+        <button
+          className="md:col-span-2 bg-blue-600 text-white p-2 rounded mt-4 hover:bg-blue-700 hover:shadow-md
+    active:scale-95"
+        >
           {loading ? "Processing..." : "Create Asset"}
         </button>
       </form>

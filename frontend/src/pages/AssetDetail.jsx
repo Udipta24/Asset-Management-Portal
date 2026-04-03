@@ -40,21 +40,22 @@ export default function AssetDetail() {
 
     fetchAsset();
   }, [id]);
+  console.log(asset);
 
   const imageFiles = files.filter((f) => f.file_type === "image");
   const docFiles = files.filter((f) => f.file_type === "document");
   const loadImageBlob = async (fileId) => {
     const res = await API.get(`assets/files/${fileId}?intent=view`, {
       credentials: "include",
+      responseType: "blob",
     });
 
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
+    return URL.createObjectURL(res.data);
   };
 
   useEffect(() => {
+    let urls = {};
     const loadImages = async () => {
-      const urls = {};
 
       for (const img of imageFiles) {
         try {
@@ -68,25 +69,25 @@ export default function AssetDetail() {
       setImageUrls(urls);
     };
 
-    if (files.length && imageFiles.length) {
+    if (imageFiles.length) {
       loadImages();
     }
 
     return () => {
       // cleanup blob URLs
-      Object.values(imageUrls).forEach(URL.revokeObjectURL);
+      Object.values(urls).forEach(URL.revokeObjectURL);
     };
   }, [files]);
 
   const previewFile = (fileId) => {
     window.open(
-      `${url}/files/${fileId}?intent=view`,
+      `${url}/assets/files/${fileId}?intent=view`,
       "_blank",
       "noopener,noreferrer"
     );
   };
   const downloadFile = (fileId) => {
-    window.location.href = `${url}/files/${fileId}?intent=download`;
+    window.location.href = `${url}/assets/files/${fileId}?intent=download`;
   };
 
   if (loading) {

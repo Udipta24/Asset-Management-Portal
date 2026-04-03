@@ -29,13 +29,12 @@ export default function Dashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await API.get("/assets");
+        const res = await API.get("/assets?sort_by=created_at&sort_direction=desc");
         const list = res.data;
 
         const total = list.length;
         const inUse = list.filter(a => a.status === "active").length;
         const maintenance = list.filter(a => a.status === "in-repair").length;
-        // Mock inactive for chart interest
         const inactive = total - inUse - maintenance;
 
         setStats({ total, inUse, maintenance, inactive });
@@ -215,7 +214,7 @@ export default function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   className="group p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:border-blue-400 dark:hover:border-cyan-500/30 transition-all cursor-pointer"
                 >
-                  <Link to={`/assets/${asset.asset_id}`} className="flex justify-between items-center">
+                  <Link to={`/assets/${asset.public_id}`} className="flex justify-between items-center">
                     <div>
                       <div className="font-semibold text-slate-700 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors">
                         {asset.asset_name}

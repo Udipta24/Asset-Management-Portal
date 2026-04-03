@@ -9,21 +9,30 @@ const { authorize } = require("../middlewares/rbac");
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB per file
+  },
   fileFilter: (req, file, cb) => {
+    // IMAGE validation
     if (file.fieldname === "images") {
-      return file.mimetype.startsWith("image/")
-        ? cb(null, true)
-        : cb(new Error("Only image files allowed"), false);
+      if (!file.mimetype.startsWith("image/")) {
+        return cb(new Error("Only image files are allowed"), false);
+      }
+      return cb(null, true);
     }
 
+    // DOCUMENT validation (PDF only)
     if (file.fieldname === "documents") {
-      return file.mimetype.includes("pdf")
-        ? cb(null, true)
-        : cb(new Error("Only PDF documents allowed"), false);
+      if (
+        file.mimetype === "application/pdf" ||
+        file.originalname.toLowerCase().endsWith(".pdf")
+      ) {
+        return cb(null, true);
+      }
+      return cb(new Error("Only PDF documents are allowed"), false);
     }
 
-    cb(new Error("Invalid file field"), false);
+    return cb(new Error("Invalid file field"), false);
   },
 });
 
@@ -40,7 +49,10 @@ router.post(
   "/",
   authenticate,
   authorize("admin", "asset manager"),
-  upload.any(),
+  upload.fields([
+    { name: "images", maxCount: 5 },
+    { name: "documents", maxCount: 5 },
+  ]),
   assetController.create
 );
 // update asset (admin and asset_manager, depart. restrictions checked in controller)
@@ -48,7 +60,10 @@ router.patch(
   "/:public_id",
   authenticate,
   authorize("admin", "asset manager"),
-  upload.any(),
+  upload.fields([
+    { name: "images", maxCount: 5 },
+    { name: "documents", maxCount: 5 },
+  ]),
   assetController.update
 );
 // delete asset (admin and asset_manager, depart. restrictions checked in controller)

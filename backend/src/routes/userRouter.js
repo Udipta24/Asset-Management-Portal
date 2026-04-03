@@ -19,7 +19,7 @@ router.post(
   "/:userId/promote",
   authenticate,
   authorize("admin"),
-  userController.promoteToAssetManager
+  userController.promoteUser
 );
 router.patch(
   "/:userId",

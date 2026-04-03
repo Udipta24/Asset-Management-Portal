@@ -39,3 +39,4 @@ router.delete(
   maintenanceController.deleteMaintenance
 );
 
+module.exports = router;

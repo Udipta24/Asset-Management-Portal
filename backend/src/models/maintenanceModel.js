@@ -53,7 +53,7 @@ exports.getAllMaintenance = async () => {
       u.name AS performed_by_name
     FROM maintenance_records m
     LEFT JOIN assets a ON m.asset_id = a.public_id
-    LEFT JOIN users u ON m.performed_by = u.public_id
+    LEFT JOIN users_data u ON m.performed_by = u.public_id
     ORDER BY m.maintenance_date DESC
   `);
 
@@ -72,7 +72,7 @@ exports.getMaintenanceById = async (maintenance_id) => {
       u.name AS performed_by_name
     FROM maintenance_records m
     LEFT JOIN assets a ON m.asset_id = a.public_id
-    LEFT JOIN users u ON m.performed_by = u.public_id
+    LEFT JOIN users_data u ON m.performed_by = u.public_id
     WHERE m.maintenance_id = $1
     `,
     [maintenance_id]
@@ -93,7 +93,7 @@ exports.getMaintenanceByAssetId = async (asset_id) => {
       u.name AS performed_by_name
     FROM maintenance_records m
     LEFT JOIN assets a ON m.asset_id = a.public_id
-    LEFT JOIN users u ON m.performed_by = u.public_id
+    LEFT JOIN users_data u ON m.performed_by = u.public_id
     WHERE m.asset_id = $1
     `,
     [asset_id]

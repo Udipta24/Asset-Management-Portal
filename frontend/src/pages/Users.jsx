@@ -26,12 +26,12 @@ export default function Users() {
     fetchUsers();
   }, []);
 
-  const promoteUser = async (publicId) => {
-    await API.post(`/user/${publicId}/promote`);
+  const promoteUser = async (publicId, role) => {
+    await API.post(`/user/${publicId}/promote?role=${role}`);
     Swal.fire({
       icon: "success",
-      title: `User ${publicId} promoted to ASSET MANAGER`,
-      text: "User can manage assets of his/her department",
+      title: `User ${publicId} promoted to ${role} successfully!`,
+      text: role === "ASSET MANAGER" ? "User can manage assets of his/her department" : "User is responsible for asset maintenance",
     });
     fetchUsers();
   };
@@ -220,7 +220,7 @@ export default function Users() {
                   {/* Promote */}
                   {u.role_name === "USER" && (
                     <button
-                      onClick={() => promoteUser(u.public_id)}
+                      onClick={() => promoteUser(u.public_id, "ASSET MANAGER")}
                       title="Promote to Asset Manager"
                       className="
                   p-2 rounded-lg transition
@@ -229,6 +229,22 @@ export default function Users() {
                   dark:text-green-400
                   dark:hover:bg-green-500/10
                   dark:hover:text-green-300
+                "
+                    >
+                      <FaArrowUp size={18} />
+                    </button>
+                  )}
+                  {u.role_name === "USER" && (
+                    <button
+                      onClick={() => promoteUser(u.public_id, "MAINTENANCE ENGINEER")}
+                      title="Promote to Maintenance Engineer"
+                      className="
+                  p-2 rounded-lg transition
+                  text-yellow-600 hover:bg-yellow-100 hover:text-yellow-700
+
+                  dark:text-yellow-400
+                  dark:hover:bg-yellow-500/10
+                  dark:hover:text-yellow-300
                 "
                     >
                       <FaArrowUp size={18} />

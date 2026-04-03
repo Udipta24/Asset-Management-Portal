@@ -3,35 +3,27 @@ const assetModel = require("../models/assetModel");
 const { supabase } = require("../config/supabaseClient");
 
 async function uploadFile(file, asset_id, public_id) {
-  let bucket, fileType;
+  const isImage = file.mimetype.startsWith("image/");
+  const bucket = isImage ? "asset-images" : "asset-documents";
 
-  if (file.mimetype.startsWith("image/")) {
-    bucket = "asset-images";
-    fileType = "image";
-  } else if (file.mimetype.includes("pdf")) {
-    bucket = "asset-documents";
-    fileType = "document";
-  } else {
-    throw new Error("Unsupported file type");
-  }
-
-  const filePath = `${public_id}/${file.originalname}`;
+  const filePath = `${public_id}/${Date.now()}-${file.originalname}`;
 
   const { error } = await supabase.storage
     .from(bucket)
     .upload(filePath, file.buffer, {
       contentType: file.mimetype,
-      upsert: false,
     });
-
-  if (error) throw error;
+  
+  if (error) {
+    throw error;
+  }
 
   await assetModel.saveAssetFileMeta({
     asset_id,
     public_id,
     bucket,
     file_path: filePath,
-    file_type: fileType,
+    file_type: isImage ? "image" : "document",
     mime_type: file.mimetype,
     original_name: file.originalname,
   });
@@ -83,6 +75,8 @@ exports.create = async (req, res, next) => {
     }
 
     // Prepare payload, passing assigned_to and description (possibly as null)
+    const parsedLocation =
+      typeof location === "string" ? JSON.parse(location) : location;
     const payload = {
       asset_name,
       category,
@@ -93,14 +87,20 @@ exports.create = async (req, res, next) => {
       purchase_cost: purchase_cost || null,
       vendor,
       status,
-      location,
+      location: parsedLocation,
       assigned_to,
-      warranty_expiry: warranty_expiry ? new Date(warranty_expiry) : null,
+      warranty_expiry: warranty_expiry || null,
       description,
     };
 
     const asset = await assetModel.createAsset(payload);
     const { asset_id, public_id } = asset;
+    if ((req.files.images?.length || 0) > 5) {
+      throw new Error("Maximum 5 images allowed");
+    }
+    if ((req.files.documents?.length || 0) > 5) {
+      throw new Error("Maximum 5 documents allowed");
+    }
 
     // Handle images
     if (req.files?.images?.length) {
@@ -140,6 +140,7 @@ exports.list = async (req, res, next) => {
       sort_direction: req.query.sort_direction,
       purchase_date_from: req.query.purchase_date_from,
       purchase_date_to: req.query.purchase_date_to,
+      limit: req.query.limit,
     };
 
     // ASSET_MANAGER and USER can see assets from their department AND unassigned assets
@@ -167,7 +168,7 @@ exports.getOne = async (req, res, next) => {
     // console.log("type:", typeof req.params.public_id);
     const asset = await assetModel.getAssetById(public_id);
     if (!asset) return res.status(404).json({ error: "Asset not found" });
-    const {asset_id} = asset;
+    const { asset_id } = asset;
     const files = await assetModel.getFilesByAssetId(asset_id);
     if (!files)
       return res.status(404).json({ error: "Failed to fetch asset files" });
@@ -213,10 +214,28 @@ exports.update = async (req, res, next) => {
       }
     }
     const { public_id } = req.params;
+    if (req.body.location) {
+      try {
+        req.body.location =
+          typeof req.body.location === "string"
+            ? JSON.parse(req.body.location)
+            : req.body.location;
+      } catch (e) {
+        return res.status(400).json({
+          error: "Invalid location format",
+        });
+      }
+    }
 
     const updated = await assetModel.updateAsset(public_id, req.body);
 
     const { asset_id } = updated;
+    if ((req.files.images?.length || 0) > 5) {
+      throw new Error("Maximum 5 images allowed");
+    }
+    if ((req.files.documents?.length || 0) > 5) {
+      throw new Error("Maximum 5 documents allowed");
+    }
 
     // Handle images
     if (req.files?.images?.length) {
@@ -255,7 +274,7 @@ exports.remove = async (req, res, next) => {
         });
       }
     }
-    const {asset_id} = assetModel.getId(public_id);
+    const { asset_id } = assetModel.getId(public_id);
     const files = await assetModel.getFilesByAssetId(asset_id);
 
     for (const file of files) {
@@ -353,7 +372,12 @@ exports.deleteAssetFile = async (req, res, next) => {
       .from(file.bucket)
       .remove([file.file_path]);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase delete error:", error);
+      return res
+        .status(500)
+        .json({ error: "Failed to delete file from storage" });
+    }
 
     await assetModel.deleteAssetFileMeta(fileId);
 

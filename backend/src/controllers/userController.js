@@ -4,7 +4,7 @@ const {
   getUserByPublicId,
   updateUserById,
   deleteUserById,
-  promoteToAssetManager,
+  promote,
   getAllUsers,
 } = require("../models/userModel");
 
@@ -54,14 +54,17 @@ exports.updateUser = async (req, res, next) => {
   }
 };
 
-exports.promoteToAssetManager = async (req, res, next) => {
+exports.promoteUser = async (req, res, next) => {
   try {
     const { userId } = req.params; // This should be public_id from frontend
+    const { role } = req.query;
+    role = toUpperCase(role);
+
 
     // Prevent self-promotion
     if (req.user.public_id === userId) {
       return res.status(403).json({
-        message: "You cannot promote yourself to ASSET_MANAGER",
+        message: "You cannot promote yourself",
       });
     }
 
@@ -73,19 +76,14 @@ exports.promoteToAssetManager = async (req, res, next) => {
     }
 
     // Check if user is already ASSET_MANAGER
-    if (targetUser.role_name === "ASSET_MANAGER") {
+    if (targetUser.role_name === "ASSET MANAGER" || targetUser.role_name === "MAINTENANCE ENGINEER" || targetUser.role_name === "ADMIN") {
       return res.status(400).json({
-        message: "User is already an ASSET_MANAGER",
-      });
-    }
-    if (targetUser.role_name === "ADMIN") {
-      return res.status(400).json({
-        message: "User is already an ADMIN",
+        message: "User is already promoted",
       });
     }
 
     // Promote user
-    const promotedUser = await promoteToAssetManager(targetUser.user_id, targetUser.department_id);
+    const promotedUser = await promote(targetUser.user_id, targetUser.department_id, role);
 
     res.json({
       message: "User promoted to ASSET_MANAGER successfully",
