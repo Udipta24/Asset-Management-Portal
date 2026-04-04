@@ -5,7 +5,7 @@ import { MdLogout, MdLightMode, MdDarkMode } from 'react-icons/md';
 import { FaUserCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import logo from "../assets/bg1.png";
+import logo from "../assets/logo.png";
 
 export default function Topbar() {
   const navigate = useNavigate();
