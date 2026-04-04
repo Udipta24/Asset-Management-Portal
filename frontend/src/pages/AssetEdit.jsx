@@ -12,6 +12,7 @@ import Swal from "sweetalert2";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 
 import UploadFiles from "../components/UploadFiles";
+import "../config/leafletConfig";
 
 /* ---------------- MAP CLICK HANDLER ---------------- */
 function MapClickHandler({ onPick }) {

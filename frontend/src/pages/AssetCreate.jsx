@@ -7,6 +7,7 @@ import Swal from "sweetalert2";
 import { useReferenceData } from "../hooks/useReferenceData";
 import axios from "axios";
 import { FaLocationDot } from "react-icons/fa6";
+import "../config/leafletConfig";
 
 function MapClickHandler({ onPick }) {
   useMapEvents({

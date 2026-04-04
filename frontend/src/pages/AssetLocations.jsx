@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../api/api";
 import { FiFilter } from "react-icons/fi";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "../config/leafletConfig";
 
 export default function AssetLocations() {
   const [locations, setLocations] = useState([]);

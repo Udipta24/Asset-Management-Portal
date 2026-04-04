@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../api/api";
 import { FiEdit, FiDownload, FiFileText } from "react-icons/fi";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "../config/leafletConfig";
 
 function Detail({ label, value }) {
   return (

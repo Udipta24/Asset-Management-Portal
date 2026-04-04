@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import bg from "../assets/login-bg.png";
 
 export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -14,7 +15,7 @@ export default function MainLayout() {
         <div
           className="absolute inset-0 z-0 opacity-0 dark:opacity-20 pointer-events-none transition-opacity duration-500"
           style={{
-            backgroundImage: `url('/src/assets/login-bg.png')`,
+            backgroundImage: `url(${bg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
