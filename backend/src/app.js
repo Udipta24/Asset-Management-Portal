@@ -51,4 +51,8 @@ app.use("/api/requests", requestRoutes);
 
 app.use(errorHandler);
 
+app.get("/", (req, res) => {
+  res.send("API is running 🚀");
+});
+
 module.exports = app;
