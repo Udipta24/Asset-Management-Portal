@@ -12,7 +12,7 @@ export default function MyRequests() {
   });
 
   const fetchRequests = async () => {
-    const res = await API.get("/requests/my", { params: filters } );
+    const res = await API.get("/requests", { params: filters });
     setRequests(res.data);
   };
 
@@ -20,7 +20,7 @@ export default function MyRequests() {
     fetchRequests();
   }, [filters]);
 
-  const cancelRequest = async(requestId) => {
+  const cancelRequest = async (requestId) => {
     Swal.fire({
       title: "Do you want to cancel this request?",
       showCancelButton: true,
@@ -28,20 +28,23 @@ export default function MyRequests() {
       cancelButtonText: "No",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        try{
+        try {
           await API.delete(`/requests/${requestId}`);
           Swal.fire("Request cancelled", "", "success");
           fetchRequests();
         } catch (err) {
-          Swal.fire("Failed to cancel request", err.response?.data?.error || err.message, "error");
+          Swal.fire(
+            "Failed to cancel request",
+            err.response?.data?.error || err.message,
+            "error",
+          );
         }
       }
     });
-  }
+  };
 
   const getStatusBadge = (status) => {
-    const base =
-      "px-2 py-1 rounded-lg text-xs font-semibold";
+    const base = "px-2 py-1 rounded-lg text-xs font-semibold";
 
     switch (status) {
       case "PENDING":
@@ -59,13 +62,11 @@ export default function MyRequests() {
 
   return (
     <div className="p-6 max-w-full bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
-      
       <h1 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">
         My Requests
       </h1>
 
       <div className="mb-4 p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 grid grid-cols-6 gap-4">
-
         <select
           className="col-span-2 border p-2 rounded outline-none bg-white dark:bg-slate-800 text-black dark:text-white border-gray-300 dark:border-slate-700 focus:border-green-500 dark:focus:border-green-400 transition-colors"
           value={filters.request_type}
@@ -80,9 +81,7 @@ export default function MyRequests() {
         <select
           className="col-span-2 border p-2 rounded outline-none bg-white dark:bg-slate-800 text-black dark:text-white border-gray-300 dark:border-slate-700 focus:border-green-500 dark:focus:border-green-400 transition-colors"
           value={filters.status}
-          onChange={(e) =>
-            setFilters({ ...filters, status: e.target.value })
-          }
+          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
         >
           <option value="">All Status</option>
           <option value="PENDING">Pending</option>
@@ -94,27 +93,40 @@ export default function MyRequests() {
         <select
           className="col-span-2 border p-2 rounded outline-none bg-white dark:bg-slate-800 text-black dark:text-white border-gray-300 dark:border-slate-700 focus:border-green-500 dark:focus:border-green-400 transition-colors"
           value={filters.dir}
-          onChange={(e) =>
-            setFilters({ ...filters, dir: e.target.value })
-          }
+          onChange={(e) => setFilters({ ...filters, dir: e.target.value })}
         >
           <option value="desc">Newest First</option>
           <option value="asc">Oldest First</option>
         </select>
-
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
         <table className="w-full border-collapse">
           <thead className="bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
             <tr>
-              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">Type</th>
-              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">{filters.request_type === "NEW ASSET" ?"Category" : "Asset ID"}</th>
-              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">{filters.request_type === "NEW ASSET" ?"Subcategory" : "Description"}</th>
-              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">Status</th>
-              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">Remark</th>
-              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">Date</th>
-              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">Actions</th>
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
+                Type
+              </th>
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
+                {filters.request_type === "NEW ASSET" ? "Category" : "Asset ID"}
+              </th>
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
+                {filters.request_type === "NEW ASSET"
+                  ? "Subcategory"
+                  : "Description"}
+              </th>
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
+                Status
+              </th>
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
+                Remark
+              </th>
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
+                Date
+              </th>
+              <th className="px-4 py-3 text-left border-b border-slate-200 dark:border-white/10">
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -129,11 +141,15 @@ export default function MyRequests() {
                 </td>
 
                 <td className="px-4 py-2 border-b border-slate-200 dark:border-white/5">
-                  {filters.request_type === "NEW ASSET" ? req.category_name : req.asset_id || "-"}
+                  {filters.request_type === "NEW ASSET"
+                    ? req.category_name
+                    : req.asset_id || "-"}
                 </td>
 
                 <td className="px-4 py-2 border-b border-slate-200 dark:border-white/5">
-                  {filters.request_type === "NEW ASSET" ? req.subcategory_name : req.description || "-"}
+                  {filters.request_type === "NEW ASSET"
+                    ? req.subcategory_name
+                    : req.issue_description || "-"}
                 </td>
 
                 <td className="px-4 py-2 border-b border-slate-200 dark:border-white/5">
@@ -146,9 +162,7 @@ export default function MyRequests() {
                   {req.remark ? (
                     req.remark
                   ) : (
-                    <span className="italic text-slate-400">
-                      No remark
-                    </span>
+                    <span className="italic text-slate-400">No remark</span>
                   )}
                 </td>
 
@@ -157,12 +171,16 @@ export default function MyRequests() {
                 </td>
 
                 <td className="px-4 py-2 text-center border-b border-slate-200 dark:border-white/5">
-                  <button
-                    onClick={() => cancelRequest(req.request_id)}
-                    className="p-2 rounded-lg text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-500/10 transition"
-                  >
-                    <MdOutlineCancel />
-                  </button>
+                  {req.status === "PENDING" ? (
+                    <button
+                      onClick={() => cancelRequest(req.request_id)}
+                      className="p-2 rounded-lg text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-500/10 transition"
+                    >
+                      <MdOutlineCancel />
+                    </button>
+                  ) : (
+                    <span className="text-slate-400 italic">No actions</span>
+                  )}
                 </td>
               </tr>
             ))}

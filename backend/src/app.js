@@ -15,6 +15,7 @@ const designationRoutes = require("./routes/designationRouter");
 const locationRoutes = require("./routes/locationRouter");
 const vendorRoutes = require("./routes/vendorRouter");
 const maintenanceRoutes = require("./routes/maintenanceRouter");
+const requestRoutes = require("./routes/requestRouter");
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api/designations", designationRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/vendors", vendorRoutes);
 app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/requests", requestRoutes);
 
 app.use(errorHandler);
 

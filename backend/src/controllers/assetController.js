@@ -140,6 +140,7 @@ exports.list = async (req, res, next) => {
       sort_direction: req.query.sort_direction,
       purchase_date_from: req.query.purchase_date_from,
       purchase_date_to: req.query.purchase_date_to,
+      assigned_to: req.query.assigned_to,
       limit: req.query.limit,
     };
 
@@ -147,7 +148,7 @@ exports.list = async (req, res, next) => {
     // ADMIN sees all assets (no department filter)
     const userRole = req.user.role.toUpperCase();
     if (
-      (userRole === "ASSET_MANAGER" || userRole === "USER") &&
+      (userRole === "ASSET MANAGER" || userRole === "USER") &&
       req.user.department_id &&
       req.query.assigned_to != "NOT ASSIGNED"
     ) {
@@ -309,8 +310,9 @@ exports.getAssetFile = async (req, res, next) => {
     // ADMIN: Can download any file
     // ASSET_MANAGER / USER: Can download files from assets in their department OR unassigned assets
     if (userRole !== "ADMIN") {
+      const publicId = await assetModel.getPublicId(file.asset_id);
       const assetDepartmentId = await assetModel.getAssetDepartmentId(
-        file.asset_id
+        publicId.public_id
       );
       if (
         assetDepartmentId !== null &&

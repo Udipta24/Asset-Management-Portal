@@ -20,35 +20,35 @@ router.get(
 router.get(
   "/pending",
   authenticate,
-  authorize(["ASSET MANAGER", "MAINTENANCE ENGINEER"]),
+  authorize("ASSET MANAGER", "MAINTENANCE ENGINEER"),
   requestController.getPendingRequests
 );
 
 router.post(
   "/:requestId/approve-asset",
   authenticate,
-  authorize(["ASSET MANAGER"]),
+  authorize("ADMIN", "ASSET MANAGER"),
   requestController.approveAssetRequest
 );
 
 router.post(
   "/:requestId/complete-maintenance",
   authenticate,
-  authorize(["MAINTENANCE ENGINEER"]),
+  authorize("ADMIN", "MAINTENANCE ENGINEER"),
   requestController.completeMaintenanceRequest
 );
 
 router.post(
   "/:requestId/reject",
   authenticate,
-  authorize(["ASSET MANAGER", "MAINTENANCE ENGINEER"]),
+  authorize("ADMIN", "ASSET MANAGER", "MAINTENANCE ENGINEER"),
   requestController.rejectRequest
 );
 
 router.patch(
   "/:requestId/update-remark",
   authenticate,
-  authorize(["ASSET MANAGER", "MAINTENANCE ENGINEER"]),
+  authorize("ADMIN", "ASSET MANAGER", "MAINTENANCE ENGINEER"),
   requestController.updateRemark
 );
 

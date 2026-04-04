@@ -6,6 +6,8 @@ exports.authorize = (...roles) => (req, res, next) => {
     return res.status(403).json({ message: "Access denied: No user role" });
   }
   const userRole = req.user.role.toUpperCase();
+  // console.log("roles:", roles);
+  // console.log("type:", typeof roles);
   const allowedRoles = roles.length 
     ? roles.map(r => r.toUpperCase()) 
     : ["USER"];

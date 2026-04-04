@@ -135,6 +135,7 @@ exports.listAssets = async (filters = {}) => {
     purchase_date_to,
     limit,
     department_id, // For ASSET_MANAGER: filter by department
+    assigned_to,
   } = filters;
 
   let whereClauses = [];
@@ -200,12 +201,17 @@ exports.listAssets = async (filters = {}) => {
     whereClauses.push(`
       EXISTS (
         SELECT 1 FROM users_data u 
-        WHERE u.user_id = assets.assigned_to 
+        WHERE u.public_id = assets.assigned_to 
         AND u.department_id = $${idx}
       )
     `);
     values.push(department_id);
     idx++;
+  }
+
+  if (assigned_to) {
+    whereClauses.push(`assigned_to = $${idx++}`);
+    values.push(assigned_to);
   }
 
   let query = `SELECT * FROM assets`;
@@ -245,7 +251,7 @@ exports.getAssetDepartmentId = async (asset_id) => {
       `SELECT u.department_id 
        FROM assets a
        LEFT JOIN users_data u ON a.assigned_to = u.public_id
-       WHERE a.asset_id = $1 OR a.public_id = $1`,
+       WHERE a.public_id = $1`,
       [asset_id]
     );
     return result.rows[0]?.department_id || null;
@@ -470,6 +476,13 @@ exports.getId = async (public_id) => {
   const res = await db.query(
     `SELECT asset_id FROM assets WHERE public_id = $1`,
     [public_id]
+  );
+  return res.rows[0];
+};
+exports.getPublicId = async (asset_id) => {
+  const res = await db.query(
+    `SELECT public_id FROM assets WHERE asset_id = $1`,
+    [asset_id]
   );
   return res.rows[0];
 };

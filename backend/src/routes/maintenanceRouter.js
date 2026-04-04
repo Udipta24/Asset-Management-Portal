@@ -13,19 +13,19 @@ router.get("/:maintenanceId", authenticate, maintenanceController.getMaintenance
 router.get("/:assetId", authenticate, maintenanceController.getMaintenanceByAssetId);
 
 /**
- * Create & update — ADMIN & ASSET_MANAGER
+ * Create & update — ADMIN & MAINTENANCE ENGINEER only
  */
 router.post(
   "/",
   authenticate,
-  authorize("admin", "asset manager"),
+  authorize("admin", "maintenance engineer"),
   maintenanceController.createMaintenance
 );
 
 router.put(
   "/:maintenanceId",
   authenticate,
-  authorize("admin", "asset manager"),
+  authorize("admin", "maintenance engineer"),
   maintenanceController.updateMaintenance
 );
 

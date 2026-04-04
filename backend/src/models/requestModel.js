@@ -18,7 +18,7 @@ exports.createRequest = async ({
         category_id,
         subcategory_id,
         asset_id,
-        description,
+        issue_description,
         status,
         assigned_to_role
       )
@@ -49,7 +49,7 @@ exports.getPendingRequestsByRole = async (role, department_id = null, sortDir) =
     query = `
         SELECT r.*, u.public_id, c.category_name, s.subcategory_name
         FROM requests r
-        LEFT JOIN users_data u ON r.requested_by = u.user_id
+        LEFT JOIN users_data u ON r.requested_by = u.public_id
         LEFT JOIN asset_categories c ON r.category_id = c.category_id
         LEFT JOIN sub_categories s ON r.subcategory_id = s.subcategory_id
         WHERE r.status = 'PENDING'
@@ -60,14 +60,15 @@ exports.getPendingRequestsByRole = async (role, department_id = null, sortDir) =
   }
 
   if (role === "MAINTENANCE ENGINEER") {
-    values = ["MAINTENANCE"];
     query = `
         SELECT r.*, u.public_id
         FROM requests r
-        LEFT JOIN users_data u ON r.requested_by = u.user_id
+        LEFT JOIN users_data u ON r.requested_by = u.public_id
         WHERE r.status = 'PENDING'
-          AND r.request_type = 'MAINTENANCE' ORDER BY r.requested_at ${sortDir === "asc" ? "ASC" : "DESC"};
+          AND r.request_type = 'MAINTENANCE'
+          AND r.department_id = $1 ORDER BY r.requested_at ${sortDir === "asc" ? "ASC" : "DESC"};
       `;
+    values = [department_id];
   }
 
   const { rows } = await db.query(query, values);
@@ -78,9 +79,9 @@ exports.getRequestsByUserId = async (user_id, filters) => {
   const { request_type, status, dir } = filters;
   let query = `SELECT r.*, u.public_id, c.category_name, s.subcategory_name
         FROM requests r
-        LEFT JOIN users_data u ON r.requested_by = u.user_id
+        LEFT JOIN users_data u ON r.requested_by = u.public_id
         LEFT JOIN asset_categories c ON r.category_id = c.category_id
-        LEFT JOIN sub_categories s ON r.subcategory_id = s.subcategory_id WHERE requested_by = $1 ORDER BY r.requested_at ${dir === "asc" ? "ASC" : "DESC"}`;
+        LEFT JOIN sub_categories s ON r.subcategory_id = s.subcategory_id WHERE requested_by = $1`;
   let values = [user_id];
   if (request_type) {
     query += ` AND request_type = $${values.length + 1}`;
@@ -90,15 +91,16 @@ exports.getRequestsByUserId = async (user_id, filters) => {
     query += ` AND status = $${values.length + 1}`;
     values.push(status);
   }
+  query += ` ORDER BY r.requested_at ${dir === "asc" ? "ASC" : "DESC"}`;
   const { rows } = await db.query(query, values);
   return rows;
 };
 
 exports.getRequestById = async (request_id) => {
   const { rows } = await db.query(
-    `SELECT SELECT r.*, u.public_id, c.category_name, s.subcategory_name
+    `SELECT r.*, u.public_id, c.category_name, s.subcategory_name
         FROM requests r
-        LEFT JOIN users_data u ON r.requested_by = u.user_id
+        LEFT JOIN users_data u ON r.requested_by = u.public_id
         LEFT JOIN asset_categories c ON r.category_id = c.category_id
         LEFT JOIN sub_categories s ON r.subcategory_id = s.subcategory_id WHERE request_id = $1`,
     [request_id]

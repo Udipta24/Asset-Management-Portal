@@ -17,7 +17,7 @@ exports.createRequest = async (req, res) => {
         assigned_to_role: request_type === "NEW ASSET" ? "ASSET MANAGER" : "MAINTENANCE ENGINEER"
     });
 
-    res.status(201).json(request, { message: "Request sent successfully" });
+    res.status(201).json({ data: request, message: "Request sent successfully" });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -41,7 +41,7 @@ exports.getPendingRequests = async (req, res) => {
 
 exports.getRequests = async (req, res) => {
     try {
-    const requests = await requestModel.getRequestsByUserId(req.user.user_id, req.query);
+    const requests = await requestModel.getRequestsByUserId(req.user.public_id, req.query);
     res.json(requests);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -52,8 +52,9 @@ exports.approveAssetRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { asset_id } = req.body;
+    console.log("Approving request", { requestId, asset_id });
 
-    if (req.user.role_name !== "ASSET MANAGER") {
+    if (req.user.role !== "ASSET MANAGER") {
       return res.status(403).json({ error: "Only asset managers can approve asset requests" });
     }
 
@@ -72,11 +73,11 @@ exports.approveAssetRequest = async (req, res) => {
 
     await requestModel.markFulfilled(requestId, "APPROVED");
 
-    await client.query("COMMIT");
+    await db.query("COMMIT");
 
     res.json({ message: "Asset assigned successfully" });
   } catch (err) {
-    await client.query("ROLLBACK");
+    await db.query("ROLLBACK");
     res.status(400).json({ error: err.message });
   } 
 };
@@ -91,7 +92,7 @@ exports.completeMaintenanceRequest = async (req, res) => {
       next_due_date
     } = req.body;
 
-    if (req.user.role_name !== "MAINTENANCE ENGINEER") {
+    if (req.user.role !== "MAINTENANCE ENGINEER") {
       return res.status(403).json({ error: "Only maintenance engineers can complete maintenance requests" });
     }
 
@@ -115,14 +116,12 @@ exports.completeMaintenanceRequest = async (req, res) => {
 
     await requestModel.markFulfilled(requestId, "FULFILLED");
 
-    await client.query("COMMIT");
+    await db.query("COMMIT");
 
     res.json({ message: "Maintenance completed and recorded" });
   } catch (err) {
-    await client.query("ROLLBACK");
+    await db.query("ROLLBACK");
     res.status(400).json({ error: err.message });
-  } finally {
-    client.release();
   }
 };
 

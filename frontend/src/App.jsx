@@ -22,7 +22,6 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AssetCreate from "./pages/AssetCreate";
 import AssetDetail from "./pages/AssetDetail";
-// import AssetAssign from "./pages/AssetAssign";
 import AssetEdit from "./pages/AssetEdit";
 import AssetList from "./pages/AssetList";
 import AssetLocations from "./pages/AssetLocations";
@@ -37,9 +36,9 @@ import Vendors from "./pages/Vendors";
 import Users from "./pages/Users";
 import Profile from "./pages/Profile"
 
-// import AdminRequests from "./pages/AdminRequests.jsx";
 import RequestPage from "./pages/RequestPage";
 import MyRequests from "./pages/MyRequests";
+import RequestsManagement from "./pages/RequestsManagement";
 
 import { ThemeProvider } from "./context/ThemeContext";
 
@@ -87,10 +86,8 @@ function AnimatedRoutes({ setLoading }) {
             </ProtectedRoute>
           }
         >
-          {/* Dashboard */}
           <Route index element={<Dashboard />} />
 
-          {/* Assets */}
           <Route path="assets" element={<AssetList />} />
           <Route path="create-asset" element={<AssetCreate />} />
           <Route path="assets/:id" element={<AssetDetail />} />
@@ -104,11 +101,11 @@ function AnimatedRoutes({ setLoading }) {
 
           <Route path="maintenance" element={<Maintenance />} />
 
-
           <Route path="vendors" element={<Vendors />} />
-          {/* <Route path="assets/assign" element={<AssetAssign />} /> */}
           <Route path="users" element={<Users />} />
           <Route path="users/profile/:publicId" element={<Profile />} />
+
+          <Route path="request/manage" element={<RequestsManagement />} />
           <Route path="request/create" element={<RequestPage />} />
           <Route path="request/my" element={<MyRequests />} />
 

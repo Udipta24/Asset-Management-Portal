@@ -58,8 +58,6 @@ exports.promoteUser = async (req, res, next) => {
   try {
     const { userId } = req.params; // This should be public_id from frontend
     const { role } = req.query;
-    role = toUpperCase(role);
-
 
     // Prevent self-promotion
     if (req.user.public_id === userId) {
@@ -83,7 +81,7 @@ exports.promoteUser = async (req, res, next) => {
     }
 
     // Promote user
-    const promotedUser = await promote(targetUser.user_id, targetUser.department_id, role);
+    const promotedUser = await promote(targetUser.user_id, targetUser.department_id, role.toUpperCase());
 
     res.json({
       message: "User promoted to ASSET_MANAGER successfully",

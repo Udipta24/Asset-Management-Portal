@@ -8,8 +8,8 @@ import { useReferenceData } from "../hooks/useReferenceData";
 export default function RequestPage() {
   const [form, setForm] = useState({
     request_type: "NEW ASSET",
-    category_id: "",
-    subcategory_id: "",
+    category_id: null,
+    subcategory_id: null,
     asset_id: "",
     description: "",
   });
@@ -22,12 +22,13 @@ export default function RequestPage() {
   const { categories, subcategories, loadingProtected } = useReferenceData();
 
   const handleSubmit = async () => {
+    console.log("Submitting form", form);
     await API.post("/requests", form);
 
     setForm({
       request_type: "NEW ASSET",
-      category_id: "",
-      subcategory_id: "",
+      category_id: null,
+      subcategory_id: null,
       asset_id: "",
       description: "",
     });

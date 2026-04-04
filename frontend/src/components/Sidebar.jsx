@@ -74,7 +74,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           collapsed={collapsed}
           to="/assets"
         />
-        {user_role !== "USER" && (
+        {(user_role === "ADMIN" || user_role === "ASSET MANAGER") && (
           <>
             <SidebarItem
               label="Create Asset"
@@ -144,6 +144,16 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           collapsed={collapsed}
           to="/request/create"
         />
+        {(user_role === "ASSET MANAGER" || user_role === "MAINTENANCE ENGINEER") && (
+          <>
+            <SidebarItem
+              label="Manage Requests"
+              icon={MdFormatListBulletedAdd}
+              collapsed={collapsed}
+              to="/request/manage"
+            />
+          </>
+        )}
 
       </div>
 

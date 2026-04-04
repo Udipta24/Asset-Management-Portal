@@ -12,7 +12,6 @@ router.get("/me", authenticate, userController.me);
 router.get(
   "/:publicId",
   authenticate,
-  authorize("admin"),
   userController.userByPublicId
 );
 router.post(
